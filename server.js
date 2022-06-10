@@ -26,7 +26,8 @@ const branchRoutes = require('./routes/branch');
 const emailRoutes = require('./routes/email');
 const employeeRoutes = require('./routes/employee');
 const kioskRoutes = require('./routes/kiosk');
-const testRoute = require('./routes/test');
+// const testRoute = require('./routes/test');
+const shiftRoutes = require('./routes/shift');
 
 // Routes Middleware
 app.use('/api/user', userRoutes);
@@ -36,7 +37,8 @@ app.use('/api', branchRoutes);
 app.use('/api', emailRoutes);
 app.use('/api', employeeRoutes);
 app.use('/api/kiosk', kioskRoutes);
-app.use('/api/test', testRoute);
+// app.use('/api/test', testRoute);
+app.use('/api/', shiftRoutes);
 
 
 // Server Init

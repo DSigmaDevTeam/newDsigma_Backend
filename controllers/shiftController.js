@@ -2,6 +2,7 @@ const Employee = require('../models/company/branch/employee/employee');
 const EmployeeDetails = require('../models/company/branch/employee/employeeDetails');
 const ShiftTimeline = require('../models/company/branch/shift/shiftTimeline');
 const Shift = require('../models/company/branch/shift/shift');
+const Flag = require('../models/company/branch/employee/flag');
 
 
 
@@ -12,10 +13,11 @@ exports.shift_get = async(req,res)=>{
         const shift = await Shift.findOne({where:{id: req.params.shiftId}, include:[{model:ShiftTimeline}]});
         if(shift){
             // fetching user associated with shift
-            const employee = await Employee.findOne({where:{id:shift.userId},  attributes:['id'], include:[{model:EmployeeDetails, attributes:['fname', 'lname']}]});
+            const employee = await Employee.findOne({where:{id:shift.employeeId},  attributes:['id'], include:[{model:EmployeeDetails, attributes:['fname', 'lname']}]});
+            console.log(employee.toJSON())
             let user = {};
             user['id'] = employee.id;
-            user['name'] = employee.employee.fname.concat(' ', employee.employee.lname);
+            user['name'] = employee.employeeDetail.fname.concat(' ', employee.employeeDetail.lname);
             return res.status(200).json({success: true, shift:shift, employee:user});
         }
         return res.status(400).json({success: false, message:`Bad request`});
@@ -27,7 +29,31 @@ exports.shift_get = async(req,res)=>{
 }
 
 // GET SHIFTS
-
+exports.shifts_get = async (req,res)=>{
+    try {
+        // Fetching Employees & their details
+        const users = await Employee.findAll({where:{}, 
+            order:[['createdAt', 'DESC']],
+        attributes: ['email','createdAt', 'id'], 
+        include: [ 
+            {
+            model: Flag, 
+             where:{flag:'Active'}, attributes: ['flag']
+            },
+            {model:EmployeeDetails, attributes:['fname', 'lname', 'mobNumber', 'title']},
+            {model: Shift, include:[{model: ShiftTimeline}]},
+        ]
+    });
+        return res.status(200).json({
+            success: true,
+            user:users
+        }); 
+        
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({success: false, message: 'Something went wrong'});
+    }
+}
 
 // CREATE SHIFT
 exports.createShift_post = async(req,res)=>{
@@ -100,7 +126,7 @@ exports.approve_patch = async(req, res)=>{
              Shift.update({status: 'Approved'},{where:{id: req.params.shiftId}})
             .then(async(data)=>{
                 const updatedBy = await Employee.findOne({where:{email: req.user}, include:[{model: EmployeeDetails}]})
-                .then((data)=>{
+                .then(async(data)=>{
                     await ShiftTimeline.create({message:`Shift has been updated by ${updatedBy.employee.fname} ${updatedBy.employee.lname}`});
 
                 })

@@ -9,8 +9,6 @@ const LoginRequired = require('../middlewares/loginRequired');
 
 // Create Shift Shift {AUTH REQUIRED}
 router.post('/employee/addshift/:empId', shiftController.createShift_post);
-// Add a break {AUTH REQUIRED}
-router.patch('/employee/addbreak/:shiftId', shiftController.addBreak_patch);
 //  Fetch all shifts with user details {AUTH REQUIRED}
 router.get('/employees/shifts', shiftController.shifts_get);
 // Approve shift {AUTH REQUIRED}
@@ -24,6 +22,9 @@ router.get('/employee/shift/:shiftId', shiftController.shift_get);
 
 
 
+
+// Add a break {AUTH REQUIRED}
+// router.patch('/employee/addbreak/:shiftId', shiftController.addBreak_patch);
 // // Login using Kiosk pin { Start shift & End Shift }
 // router.post('/employee/kiosklogin', shiftController.kioskLogin_post);
 
