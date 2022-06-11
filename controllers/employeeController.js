@@ -18,6 +18,7 @@ const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
 const SENDER_EMAIL = process.env.SENDER_EMAIL;
 
 
+//Employee Details Form (TESTED) (Only mail Not working)
 exports.form_post = async(req,res)=>{
   console.log(req.user);
   console.log(req.files);
@@ -172,21 +173,22 @@ exports.form_post = async(req,res)=>{
 }
 
 
+// All Employees (Tested)
 exports.employees_get = async(req,res)=>{
   try {
-  const users = await Employee.findAll({where:{},
+    // Fetching all employees
+  const employees = await Employee.findAll({where:{},
     order:[['createdAt', 'DESC']],
     attributes: ['email','createdAt', 'id'],
     include: [
-             {model: Employee, attributes:['fname', 'lname', 'mobNumber', 'title']},
+             {model: EmployeeDetails, attributes:['fname', 'lname', 'mobNumber', 'title']},
              {model:Flag, attributes:['flag']},
 
        ]
   });
-    // console.log(user)
     return res.status(200).json({
       success:true,
-      employees: users
+      employees: employees
     })
   } catch (error) {
     console.log(error)
@@ -198,18 +200,21 @@ exports.employees_get = async(req,res)=>{
 
 }
 
+
+// Updating Employee (Not Tested)
 exports.employee_patch = async(req,res)=>{
   try {
+    // Checking if flag exists
       if(req.body.flag){
-         await EmployeeDetails.update(req.body,{where:{userId: req.params.empId}});
-         await Flag.update({flag:req.body.flag}, {where:{user_id:req.params.empId}});
+         await EmployeeDetails.update(req.body,{where:{employeeId: req.params.empId}});
+         await Flag.update({flag:req.body.flag}, {where:{employeeId:req.params.empId}});
          return res.status(201).json({
            success: true,
            message: "Details updated successfully"
          });
       }
 
-      await EmployeeDetails.update(req.body,{where:{userId: req.params.empId}});
+      await EmployeeDetails.update(req.body,{where:{employeeId: req.params.empId}});
       return res.status(201).json({
         success: true,
         message: "Details updated successfully"
@@ -223,11 +228,13 @@ exports.employee_patch = async(req,res)=>{
   }
 }
 
+
+// Deleting Employee (Not Tested)
 exports.employee_delete = async(req,res)=>{
   try {
     const emp = await Employee.destroy({where: {id: req.params.empId},truncate:true});
-    const employee = await EmployeeDetails.destroy({where: {userId: req.params.empId},truncate:true});
-    const U = await Flag.destroy({where: {user_id: req.params.empId}, truncate:true});
+    const employee = await EmployeeDetails.destroy({where: {employeeId: req.params.empId},truncate:true});
+    const U = await Flag.destroy({where: {employeeId: req.params.empId}, truncate:true});
     return res.json({
       d: emp,
       flag: U
@@ -241,25 +248,28 @@ exports.employee_delete = async(req,res)=>{
   }
 }
 
+
+// Fetching Single Employee (Tested)
 exports.employee_get = async(req,res)=>{
   try {
     let result = {};
 // fetching from DB
-    const employee = await User.findOne({where:{id:req.params.empId}, 
+    const employee = await Employee.findOne({where:{id:req.params.empId}, 
     attributes: ['id', 'pin'],
     include: [
-             {model: Employee,attributes:{exclude:['id', 'userId', 'createdAt', 'updatedAt']}},
+             {model: EmployeeDetails,attributes:{exclude:['id', 'userId', 'createdAt', 'updatedAt']}},
              {model:Flag, attributes:['flag']},
 
        ]});
+       console.log(employee.employeeDetail)
 // Rearranging
        result['user_id'] = employee.id;
        result['flag'] = employee.flag.flag;
        result['pin'] = employee.pin;
        const emp = employee.toJSON();
-       const len = Object.keys(emp.employee).length;
+       const len = Object.keys(emp.employeeDetail).length;
        for (let i = 0; i < len; i++) {
-         result[Object.keys(emp.employee)[i]] = Object.values(emp.employee)[i]
+         result[Object.keys(emp.employeeDetail)[i]] = Object.values(emp.employeeDetail)[i]
          
        }
 
@@ -273,14 +283,18 @@ exports.employee_get = async(req,res)=>{
   }
 }
 
+
+// Activating Employee (Not Tested)
 exports.activateEmployee_patch = async (req, res)=>{
   try {
-    const check = await Flag.findOne({where:{user_id: req.params.empId}, include:[{model: Employee}]});
+    // Fetching flag of the employee
+    const check = await Flag.findOne({where:{employeeId: req.params.empId}, include:[{model: Employee}]});
 
     if(check && check.flag === 'Onboarding'){
       // Fetching Mail Content
       const content = ou.activationOutput(check.employee.pin, check.employee.email);
 
+      // If mail not sent then it will not activate
       transporter.sendMail(content, async function (err, info) {
         if (err) {
           console.log(err);
@@ -304,23 +318,28 @@ exports.activateEmployee_patch = async (req, res)=>{
 
 }
 
+
+// Registering Employee (TESTED) 
 exports.register_post = async(req,res)=>{
     try {
+      // checking if password exists
         if(req.body.password){
+          // hashing password
             const hashedPassword = await bcrypt.hash(req.body.password, 10);
             const employee = await Employee.findOne({
-                where:{
-                    email: req.body.email
-                },
-                include:{
-                    model: Flag,
-                    attributes: ['flag']
-                }
+              where:{
+                email: req.body.email
+              },
+              include:{
+                model: Flag,
+                attributes: ['flag']
+              }
             });
+            // checking if the employee email exists
             if(employee){
                 // const branchRoles = Role.findOne({where:{}})
                 const user = await Employee.update({password: hashedPassword}, {where:{email: req.body.email}});
-                const flag = await Flag.update({flag: 'Registered'}, {where:{user_id: employee.id}});
+                const flag = await Flag.update({flag: 'Registered'}, {where:{employeeId: employee.id}});
                             //  await EmployeeRole.create({employeeId: employee.id, RoleId: })
                 return res.status(200).json({
                     success:true,

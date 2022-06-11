@@ -6,19 +6,21 @@ const shiftController = require('../controllers/shiftController');
 // Middleware
 // const kioskLoginRequired = require('../middlewares/kioskLoginRequired');
 const LoginRequired = require('../middlewares/loginRequired');
+// const employeeAccess = require('../middlewares/RBAC/employeeAccess');
+// const employee = require('../middlewares/RBAC/employeePermissions');
 
 // Create Shift Shift {AUTH REQUIRED}
-router.post('/employee/addshift/:empId', shiftController.createShift_post);
+router.post('/employee/addshift/:empId',LoginRequired, shiftController.createShift_post);
 //  Fetch all shifts with user details {AUTH REQUIRED}
-router.get('/employees/shifts', shiftController.shifts_get);
+router.get('/employees/shifts',LoginRequired, shiftController.shifts_get);
 // Approve shift {AUTH REQUIRED}
-router.patch('/employee/shiftapprove/:shiftId', shiftController.approve_patch);
+router.patch('/employee/shiftapprove/:shiftId',LoginRequired, shiftController.approve_patch);
 // Delete shift {AUTH REQUIRED}
-router.delete('/employee/shiftdelete/:shiftId', shiftController.shiftDelete_delete);
+router.delete('/employee/shiftdelete/:shiftId', LoginRequired,shiftController.shiftDelete_delete);
 // Edit shift {AUTH REQUIRED}
-router.patch('/employee/shiftedit/:shiftId', shiftController.shiftEdit_patch);
+router.patch('/employee/shiftedit/:shiftId', LoginRequired,shiftController.shiftEdit_patch);
 // Single Shift
-router.get('/employee/shift/:shiftId', shiftController.shift_get);
+router.get('/employee/shift/:shiftId', LoginRequired,shiftController.shift_get);
 
 
 

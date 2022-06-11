@@ -62,6 +62,8 @@ exports.login_post = async(req,res)=>{
 exports.dashboard_get = async(req, res) => {
     try {
         // console.log(req.branchId);
+        // console.log(req.branchId);
+        // fetching all employees
         const employees = await Employee.findAll({where:{branchId: req.branchId}, 
             order:[['createdAt', 'DESC']],
         attributes: ['email','createdAt', 'id'], 
@@ -74,6 +76,8 @@ exports.dashboard_get = async(req, res) => {
             {model: Shift, include:[{model: ShiftTimeline}]},
         ]
     });
+    // console.log(employees)
+    // fetching working employees
     const workingEmployees = await Employee.findAll({where:{branchId: req.branchId},
         order:[['createdAt', 'DESC']],
         attributes: ['email', 'id'],
@@ -92,6 +96,7 @@ exports.dashboard_get = async(req, res) => {
             }
         ]
     })
+    // console.log(workingEmployees)
         return res.status(200).json({
             success: true,
             employees:employees,
@@ -107,11 +112,8 @@ exports.dashboard_get = async(req, res) => {
 
 exports.employeeLogin_post = async(req, res) => {
     try {
-        // console.log(req.body);
-        // console.log(req.params.employeeId)
-        // console.log(req.branchId)
         const employee = await Employee.findOne({where:{id: req.params.employeeId, branchId:req.branchId, pin: req.body.pin}, 
-            include:[{model:Shift, order:[['createdAt','DESC']]}]
+            include:[{model:Shift, order:[['createdAt','DESC']]}, {model:EmployeeDetails}]
         });
         console.log(employee)
         if (employee) {
@@ -120,11 +122,10 @@ exports.employeeLogin_post = async(req, res) => {
                     expiresIn: '30d'
                 });           
             return res.status(200).json({success:true, message:`Login Successful`,employee:employee, accessToken:accessToken});
+        }else{
+            return res.status(400).json({success:false, message:`Employee not found`})
         }
-        // Have to check if the user has any ACTIVE shift, if yes then return that shift with response else just return the usual user details
-        // if (employee.shifts === []) {
-        //     return res.status(200).json({success:true, message:Employee })
-        // }
+        
     } catch (error) {
         console.error(error);
         res.status(500).json({success:true, message:`Something went wrong, Please try again`})
@@ -476,3 +477,13 @@ exports.employeeEndShift_patch = async(req,res)=>{
         return res.status(500).json({success:false, message:`Something went wrong please try again later`});
     }
 }
+
+// exports.singleEmployee_get = async(req, res)=>{
+//     const employee = await Employee.findOne({where:{id: req.params.employeeId, branchId:req.branchId, pin: req.body.pin}, 
+//         include:[{model:Shift, order:[['createdAt','DESC']]}]
+//     });
+//     console.log(employee)
+//     if (employee) {
+//         return res.status(200).json({success:true,employee:employee});
+//     }
+// }
