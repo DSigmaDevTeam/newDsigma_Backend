@@ -66,7 +66,7 @@ exports.dashboard_get = async(req, res) => {
         // fetching all employees
         const employees = await Employee.findAll({where:{branchId: req.branchId}, 
             order:[['createdAt', 'DESC']],
-        attributes: ['email','createdAt', 'id'], 
+        attributes: ['email','createdAt', 'id','shiftStatus'], 
         include: [ 
             {
              model: Flag, 
