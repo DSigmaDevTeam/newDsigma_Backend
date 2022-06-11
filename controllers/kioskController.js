@@ -209,7 +209,7 @@ exports.employeeStartShift_post = async(req,res)=>{
                         });
                     })
                     await Employee.update({shiftStatus:"Working"},{where:{id:employee.id}})
-                    return res.status(200).json({success:true, message:`Your shift has been started at TIME: ${time} DATE: ${date}`, startImage: 'ImageLink'});
+                    return res.status(200).json({success:true, message:`Successfully started a shift`, startImage: 'ImageLink'});
 
                 }).catch((err)=>{
                     console.log(err);
@@ -234,7 +234,7 @@ exports.employeeStartShift_post = async(req,res)=>{
                         })
                     })
                     await Employee.update({shiftStatus: "Working"}, {where:{id: employee.id}})
-                    return res.status(200).json({success:true, message:`Your shift has been started at TIME: ${time} DATE: ${date}`, startImage: 'ImageLink'});
+                    return res.status(200).json({success:true, message:`Successfully started a shift`, startImage: 'ImageLink'});
                 }).catch((err)=>{
                     console.log(err);
                     return res.status(500).json({success:false, message:`Something went wrong Please try again later`})
@@ -285,7 +285,7 @@ exports.employeeStartBreak_patch = async(req,res)=>{
                 // Updating Shift Status
                 await Employee.update({shiftStatus:"On Break"},{where:{id:employee.id}});
             });
-            return res.status(200).json({success:true, message:`Break started TIME: ${startBreak.start}`});
+            return res.status(200).json({success:true, message:`Successfully started a break`});
             }
         }else{
             return res.status(400).json({success:false, message:`Employee does not have any Active shift`})
@@ -341,7 +341,7 @@ exports.employeeEndBreak_patch = async(req, res)=>{
                 .then(async(data)=>{
                     await Employee.update({shiftStatus:"Working"}, {where:{id:employeeWithActiveShift.id}});
                 })
-                return res.status(200).json({success:true, message:`Break Ended TIME: ${endBreak.end}`})
+                return res.status(200).json({success:true, message:`Successfully ended a break!`})
             }else{
 
                 // Adding existing time to the new time 
@@ -354,7 +354,7 @@ exports.employeeEndBreak_patch = async(req, res)=>{
                  .then(async(data)=>{
                     await Employee.update({shiftStatus:"Working"}, {where:{id:employeeWithActiveShift.id}});
                  })
-                 return res.status(200).json({success:true, message:`Break Ended TIME: ${endBreak.end}`})
+                 return res.status(200).json({success:true, message:`Successfully ended a break!`})
             } 
             
         }else{
@@ -362,7 +362,7 @@ exports.employeeEndBreak_patch = async(req, res)=>{
         }
     } catch (error) {
         console.log(error)
-        return res.status(500).json({success:false, message:`Error: error: error.message`})
+        return res.status(500).json({success:false, message:`Error: error: ${error.message}`})
     }
 }
 
@@ -429,7 +429,7 @@ exports.employeeEndShift_patch = async(req,res)=>{
                     // Updating ShiftStatus
                     await Employee.update({shiftStatus: "Not Working"}, {where:{id: employeeWithActiveShift.id}})
                 });
-                return res.status(200).json({success: true, message:`Shift has ended at TIME: ${time}`});
+                return res.status(200).json({success: true, message:`Successfully ended a shift!`});
             }else{
                 // Calculate the total time
                 // check if the total time in db is 00:00:00
@@ -483,7 +483,7 @@ exports.employeeEndShift_patch = async(req,res)=>{
                             message: "Ended Shift"
                         })
                      })
-                      return res.status(200).json({success:true, message:`Break Ended TIME: ${endBreak.end}`})
+                      return res.status(200).json({success:true, message:`Successfully ended shift!`})
                  } 
     
             }
