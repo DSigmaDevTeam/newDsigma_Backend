@@ -28,6 +28,18 @@ const Employee = sequelize.define("employee", {
     roleId:{
       type: Sequelize.INTEGER,
       allowNull: false
+    },
+
+    shiftStatus:{
+      type: Sequelize.STRING,
+      validate:{
+        isIn:{
+          args:[['Working', 'Not Working', 'On Break']],
+          msg: 'Please select appropriate option'
+        }
+      },
+      default:"Not Working",
+      allowNull: false,
     }
     // isBranchManager:{
     //   type: Sequelize.BOOLEAN,

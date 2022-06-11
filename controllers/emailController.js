@@ -29,7 +29,8 @@ exports.email_post = async(req, res)=>{
             email: req.body.email,
             pin:pin,
             branchId: req.params.branchId,
-            roleId: role.id
+            roleId: role.id,
+            shiftStatus: "Not Working"
             // isBranchManager: false
         });
 
@@ -56,7 +57,7 @@ exports.email_post = async(req, res)=>{
       transporter.sendMail(content, function (err, info) {
         if (err) {
           console.log(err);
-          return res.status(400).json({success: false, message: `Email not sent`});
+          return res.status(400).json({success: false, message: `User Created, But email not sent`});
         } else {
           return res.status(200).json({
             success: true,

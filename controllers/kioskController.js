@@ -177,7 +177,7 @@ exports.employeeStartShift_post = async(req,res)=>{
         if(shift){
             return res.status(400).json({success:false, message:`Employee already has an Active shift`})
         }
-
+        // console.log(shift)
         // Uploading StartShift Image to AWS
         // replace StartShiftImage with frontend se jo b image attribute ka naam hai
         const uploadSingle = upload("dsigmas3").single(
@@ -193,46 +193,48 @@ exports.employeeStartShift_post = async(req,res)=>{
             if(req.file) {
 
                 const employee = Employee.findOne({where:{email:req.user}})
-                .then((data)=>{
-                    console.log(data.toJSON())
+                .then(async(employee)=>{
+                    // console.log(data.toJSON())
                     const shiftStart = Shift.create({
                         startTime: time,
                         startDate: date,
                         startImage: req.file.location,
-                        employeeId: data.id,
+                        employeeId: employee.id,
                         status:`Active`,
                         totalBreak: `00:00:00`
-                    }).then((data)=>{
-                        ShiftTimeline.create({
-                            shiftId: data.id,
+                    }).then(async (shift)=>{
+                        await ShiftTimeline.create({
+                            shiftId: shift.id,
                             message:"Started Shift"
-                        }).then((data)=>{
-                            return res.status(200).json({success:true, message:`Your shift has been started at TIME: ${time} DATE: ${date}`, startImage: 'ImageLink'});
-                        })
+                        });
                     })
+                    await Employee.update({shiftStatus:"Working"},{where:{id:employee.id}})
+                    return res.status(200).json({success:true, message:`Your shift has been started at TIME: ${time} DATE: ${date}`, startImage: 'ImageLink'});
+
                 }).catch((err)=>{
                     console.log(err);
                     return res.status(500).json({success:false, message:`Something went wrong Please try again later`})
                 })  
             } else{
                 const employee = Employee.findOne({where:{email:req.user}})
-                .then((data)=>{
-                    console.log(data.toJSON())
+                // console.log(employee)
+                .then(async(employee)=>{
+                    // console.log(data.toJSON())
                     const shiftStart = Shift.create({
                         startTime: time,
                         startDate: date,
                         startImage: "N/A",
-                        employeeId: data.id,
+                        employeeId: employee.id,
                         status:`Active`,
                         totalBreak: `00:00:00`
-                    }).then((data)=>{
-                        ShiftTimeline.create({
-                            shiftId: data.id,
+                    }).then(async(shift)=>{
+                        await ShiftTimeline.create({
+                            shiftId: shift.id,
                             message:"Started Shift"
-                        }).then((data)=>{
-                            return res.status(200).json({success:true, message:`Your shift has been started at TIME: ${time} DATE: ${date}`, startImage: 'ImageLink'});
                         })
                     })
+                    await Employee.update({shiftStatus: "Working"}, {where:{id: employee.id}})
+                    return res.status(200).json({success:true, message:`Your shift has been started at TIME: ${time} DATE: ${date}`, startImage: 'ImageLink'});
                 }).catch((err)=>{
                     console.log(err);
                     return res.status(500).json({success:false, message:`Something went wrong Please try again later`})
@@ -277,7 +279,12 @@ exports.employeeStartBreak_patch = async(req,res)=>{
                 return res.status(400).json({success: false, message: 'Bad Method Call'})
             }else{
                 const startBreak = {"start":time}
-            const sh = await Shift.update({break: sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(startBreak))} ,{where:{id:shift.id}});
+                // Updating Shift
+            const sh = Shift.update({break: sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(startBreak))} ,{where:{id:shift.id}})
+            .then(async(data)=>{
+                // Updating Shift Status
+                await Employee.update({shiftStatus:"On Break"},{where:{id:employee.id}});
+            });
             return res.status(200).json({success:true, message:`Break started TIME: ${startBreak.start}`});
             }
         }else{
@@ -326,21 +333,27 @@ exports.employeeEndBreak_patch = async(req, res)=>{
 
             // Check if the totalBreakTime in DB is not === 00:00:00
             if(shift.totalBreak === `00:00:00`){
-               const breakEnd =  await Shift.update({
+               const breakEnd =   Shift.update({
                    break:sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(endBreak)), 
                    totalBreak: totalBreakTime}, 
                    {where:{id:shift.id}
-                });
+                })
+                .then(async(data)=>{
+                    await Employee.update({shiftStatus:"Working"}, {where:{id:employeeWithActiveShift.id}});
+                })
                 return res.status(200).json({success:true, message:`Break Ended TIME: ${endBreak.end}`})
             }else{
 
                 // Adding existing time to the new time 
                 const totalBreak = addTimes(shift.totalBreak, totalBreakTime);
-                const breakEnd =  await Shift.update({
+                const breakEnd =   Shift.update({
                     break:sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(endBreak)), 
                     totalBreak: totalBreak}, 
                     {where:{id:shift.id}
-                 });
+                 })
+                 .then(async(data)=>{
+                    await Employee.update({shiftStatus:"Working"}, {where:{id:employeeWithActiveShift.id}});
+                 })
                  return res.status(200).json({success:true, message:`Break Ended TIME: ${endBreak.end}`})
             } 
             
@@ -349,11 +362,11 @@ exports.employeeEndBreak_patch = async(req, res)=>{
         }
     } catch (error) {
         console.log(error)
-        return res.json({error: error.message})
+        return res.status(500).json({success:false, message:`Error: error: error.message`})
     }
 }
 
-// EndBreak
+// End Shift
 exports.employeeEndShift_patch = async(req,res)=>{
     try {
         const date_ob = new Date();
@@ -398,6 +411,7 @@ exports.employeeEndShift_patch = async(req,res)=>{
             }
             // console.log(imageRoute);
             if(shift.break == null || shift.break.at(-1).end){
+                // Ending Shift
                  Shift.update({
                     endTime: time,
                     endDate: date,
@@ -407,10 +421,13 @@ exports.employeeEndShift_patch = async(req,res)=>{
                     status: 'Completed'
                 }, {where:{id: shift.id}})
                 .then(async(data)=>{
+                    // Adding Shift Timeline
                     await ShiftTimeline.create({
                         shiftId: shift.id,
                         message: "Ended Shift"
-                    })
+                    });
+                    // Updating ShiftStatus
+                    await Employee.update({shiftStatus: "Not Working"}, {where:{id: employeeWithActiveShift.id}})
                 });
                 return res.status(200).json({success: true, message:`Shift has ended at TIME: ${time}`});
             }else{
@@ -422,6 +439,7 @@ exports.employeeEndShift_patch = async(req,res)=>{
     
             
                 if(shift.totalBreak === `00:00:00`){
+                    // Ending shift
                     const breakEnd = Shift.update({
                         break:sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(endBreak)), 
                         totalBreak: totalBreakTime,
@@ -435,10 +453,13 @@ exports.employeeEndShift_patch = async(req,res)=>{
                         {where:{id:shift.id}
                      })
                      .then(async(data)=>{
+                        // Adding Shift Timeline
                         await ShiftTimeline.create({
                             shiftId: shift.id,
                             message: "Ended Shift"
-                        })
+                        });
+                        // Updating Shift Status
+                        await Employee.update({shiftStatus: "Not Working"}, {where:{id: employeeWithActiveShift.id}});
                      })
                  }else{
      
