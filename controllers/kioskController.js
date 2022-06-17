@@ -34,9 +34,9 @@ function addTimes(time1, time2) {
 // Kiosk Login
 exports.login_post = async(req,res)=>{
     try {
-        console.log(req.body)
+        // console.log(req.body)
         const branch = await Branch.findOne({where:{kioskId:req.body.companyId, code:req.body.code}});
-        console.log(branch)
+        // console.log(branch)
             if(branch){
                 const key = process.env.ACCESS_TOKEN_SECRET;
                 const accessToken = jwt.sign({branchId:branch.id}, key,{
@@ -108,16 +108,25 @@ exports.dashboard_get = async(req, res) => {
 // Employee Login
 exports.employeeLogin_post = async(req, res) => {
     try {
+        console.log(req.params.employeeId)
+        console.log(req.branchId)
+        console.log(req.body.pin)
         const employee = await Employee.findOne({where:{id: req.params.employeeId, branchId:req.branchId, pin: req.body.pin}, 
-            include:[{model:Shift, order:[['createdAt','DESC']]}, {model:EmployeeDetails}]
+            include:[{model:EmployeeDetails}]
         });
         console.log(employee)
+        // let shift = "N/A";
+        let shift = await Shift.findOne({where:{employeeId:employee.id, status:"Active"}})
+        if(!shift){
+            shift = "N/A";
+        }
+        // console.log(employee)
         if (employee) {
             const key = process.env.ACCESS_TOKEN_SECRET;
                 const accessToken = jwt.sign({user:employee.email}, key,{
                     expiresIn: '30d'
                 });           
-            return res.status(200).json({success:true, message:`Login Successful`,employee:employee, accessToken:accessToken});
+            return res.status(200).json({success:true, message:`Login Successful`,employee:employee, accessToken:accessToken, shift:shift});
         }else{
             return res.status(400).json({success:false, message:`Employee not found`})
         }
@@ -277,7 +286,7 @@ exports.employeeStartBreak_patch = async(req,res)=>{
                 // Updating Shift Status
                 await Employee.update({shiftStatus:"On Break"},{where:{id:employee.id}});
             });
-            return res.status(200).json({success:true, message:`Successfully started a break`, startTime: date_ob.toISOString()});
+            return res.status(200).json({success:true, message:`Successfully started a break`, startTime: date_ob.toISOString(), shift:shift});
             }
         }else{
             return res.status(400).json({success:false, message:`Employee does not have any Active shift`})
@@ -334,7 +343,7 @@ exports.employeeEndBreak_patch = async(req, res)=>{
                 .then(async(data)=>{
                     await Employee.update({shiftStatus:"Working"}, {where:{id:employeeWithActiveShift.id}});
                 })
-                return res.status(200).json({success:true, message:`Successfully ended a break!`, endTime: date_ob.toISOString()})
+                return res.status(200).json({success:true, message:`Successfully ended a break!`, endTime: date_ob.toISOString(), shift:shift})
             }else{
 
                 // Adding existing time to the new time 
@@ -347,7 +356,7 @@ exports.employeeEndBreak_patch = async(req, res)=>{
                  .then(async(data)=>{
                     await Employee.update({shiftStatus:"Working"}, {where:{id:employeeWithActiveShift.id}});
                  })
-                 return res.status(200).json({success:true, message:`Successfully ended a break!`, endTime: date_ob.toISOString()})
+                 return res.status(200).json({success:true, message:`Successfully ended a break!`, endTime: date_ob.toISOString(), shift:shift})
             } 
             
         }else{
