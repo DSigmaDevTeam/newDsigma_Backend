@@ -22,8 +22,6 @@ router.patch('/endbreak', LoginRequired, kioskController.employeeEndBreak_patch)
 // End Shift
 router.patch('/endShift', LoginRequired, kioskController.employeeEndShift_patch);
 
-// Single Employee
-// router.get('/employee/:employeeId', LoginRequired, kioskController.singleEmployee_get);
 
 
 

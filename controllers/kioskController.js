@@ -31,11 +31,11 @@ function addTimes(time1, time2) {
          return (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
   }
 
-
+// Kiosk Login
 exports.login_post = async(req,res)=>{
     try {
         console.log(req.body)
-        const branch = await Branch.findOne({where:{kioskId:req.body.companyId}});
+        const branch = await Branch.findOne({where:{kioskId:req.body.companyId, code:req.body.code}});
         console.log(branch)
             if(branch){
                 const key = process.env.ACCESS_TOKEN_SECRET;
@@ -58,11 +58,9 @@ exports.login_post = async(req,res)=>{
     }
 }
 
-
+// Dashboard
 exports.dashboard_get = async(req, res) => {
     try {
-        // console.log(req.branchId);
-        // console.log(req.branchId);
         // fetching all employees
         const employees = await Employee.findAll({where:{branchId: req.branchId}, 
             order:[['createdAt', 'DESC']],
@@ -76,7 +74,6 @@ exports.dashboard_get = async(req, res) => {
             {model: Shift, include:[{model: ShiftTimeline}]},
         ]
     });
-    // console.log(employees)
     // fetching working employees
     const workingEmployees = await Employee.findAll({where:{branchId: req.branchId},
         order:[['createdAt', 'DESC']],
@@ -96,7 +93,6 @@ exports.dashboard_get = async(req, res) => {
             }
         ]
     })
-    // console.log(workingEmployees)
         return res.status(200).json({
             success: true,
             employees:employees,
@@ -109,7 +105,7 @@ exports.dashboard_get = async(req, res) => {
     }
 }
 
-
+// Employee Login
 exports.employeeLogin_post = async(req, res) => {
     try {
         const employee = await Employee.findOne({where:{id: req.params.employeeId, branchId:req.branchId, pin: req.body.pin}, 
@@ -155,6 +151,7 @@ const upload = (bucketName) =>
   });
 
 
+// StartShift
 exports.employeeStartShift_post = async(req,res)=>{
     const date_ob = new Date();
     // Time
@@ -177,7 +174,6 @@ exports.employeeStartShift_post = async(req,res)=>{
         if(shift){
             return res.status(400).json({success:false, message:`Employee already has an Active shift`})
         }
-        // console.log(shift)
         // Uploading StartShift Image to AWS
         // replace StartShiftImage with frontend se jo b image attribute ka naam hai
         const uploadSingle = upload("dsigmas3").single(
@@ -189,15 +185,14 @@ exports.employeeStartShift_post = async(req,res)=>{
                 console.log(err)
                 return res.status(400).json({success:false, message: `Error while uploading the Image to aws ERROR:${err.message}`});
             }
-            
+            console.log(req.file)
             if(req.file) {
 
                 const employee = Employee.findOne({where:{email:req.user}})
                 .then(async(employee)=>{
-                    // console.log(data.toJSON())
                     const shiftStart = Shift.create({
-                        startTime: time,
-                        startDate: date,
+                        startTime: date_ob.toISOString(),
+                        startDate: date_ob.toISOString(),
                         startImage: req.file.location,
                         employeeId: employee.id,
                         status:`Active`,
@@ -209,7 +204,7 @@ exports.employeeStartShift_post = async(req,res)=>{
                         });
                     })
                     await Employee.update({shiftStatus:"Working"},{where:{id:employee.id}})
-                    return res.status(200).json({success:true, message:`Successfully started a shift`, startImage: 'ImageLink'});
+                    return res.status(200).json({success:true, message:`Successfully started a shift`, startImage: req.file.location, startTime: date_ob.toISOString()});
 
                 }).catch((err)=>{
                     console.log(err);
@@ -217,12 +212,10 @@ exports.employeeStartShift_post = async(req,res)=>{
                 })  
             } else{
                 const employee = Employee.findOne({where:{email:req.user}})
-                // console.log(employee)
                 .then(async(employee)=>{
-                    // console.log(data.toJSON())
                     const shiftStart = Shift.create({
-                        startTime: time,
-                        startDate: date,
+                        startTime: date_ob.toISOString(),
+                        startDate: date_ob.toISOString(),
                         startImage: "N/A",
                         employeeId: employee.id,
                         status:`Active`,
@@ -234,13 +227,12 @@ exports.employeeStartShift_post = async(req,res)=>{
                         })
                     })
                     await Employee.update({shiftStatus: "Working"}, {where:{id: employee.id}})
-                    return res.status(200).json({success:true, message:`Successfully started a shift`, startImage: 'ImageLink'});
+                    return res.status(200).json({success:true, message:`Successfully started a shift`, startImage:"N/A", startTime: date_ob.toISOString() });
                 }).catch((err)=>{
                     console.log(err);
                     return res.status(500).json({success:false, message:`Something went wrong Please try again later`})
                 })  
             }
-            // return res.send(imageRoute)
         })
 
         
@@ -278,14 +270,14 @@ exports.employeeStartBreak_patch = async(req,res)=>{
             if(shift.break != null && shift.break.at(-1).start && !shift.break.at(-1).end){
                 return res.status(400).json({success: false, message: 'Bad Method Call'})
             }else{
-                const startBreak = {"start":time}
+                const startBreak = {"start":date_ob.toISOString()}
                 // Updating Shift
             const sh = Shift.update({break: sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(startBreak))} ,{where:{id:shift.id}})
             .then(async(data)=>{
                 // Updating Shift Status
                 await Employee.update({shiftStatus:"On Break"},{where:{id:employee.id}});
             });
-            return res.status(200).json({success:true, message:`Successfully started a break`});
+            return res.status(200).json({success:true, message:`Successfully started a break`, startTime: date_ob.toISOString()});
             }
         }else{
             return res.status(400).json({success:false, message:`Employee does not have any Active shift`})
@@ -321,15 +313,16 @@ exports.employeeEndBreak_patch = async(req, res)=>{
 
             // check if the shift has a started Break
             const shift = await Shift.findOne({where:{id: employeeWithActiveShift.shifts[0].id}});
-            if(shift.break.at(-1).end){
+            const position = shift.break.length -1
+            if(shift.break[position].end){
                 return res.status(400).json({success:false, message:`Shift has already ended`});
             }
 
             //Ending Break
-            const endBreak = {"end": time}
-            const totalBreakTime = times.breakTimeCalculator(shift.break.at(-1).start, time);
-            console.log(totalBreakTime);
-            console.log(totalBreakTime);
+            const endBreak = {"end": date_ob.toISOString()}
+            const totalBreakTime = times.breakTimeCalculator(shift.break[position].start, date_ob.toISOString());
+            // console.log(totalBreakTime);
+            // console.log(totalBreakTime);
 
             // Check if the totalBreakTime in DB is not === 00:00:00
             if(shift.totalBreak === `00:00:00`){
@@ -341,7 +334,7 @@ exports.employeeEndBreak_patch = async(req, res)=>{
                 .then(async(data)=>{
                     await Employee.update({shiftStatus:"Working"}, {where:{id:employeeWithActiveShift.id}});
                 })
-                return res.status(200).json({success:true, message:`Successfully ended a break!`})
+                return res.status(200).json({success:true, message:`Successfully ended a break!`, endTime: date_ob.toISOString()})
             }else{
 
                 // Adding existing time to the new time 
@@ -354,7 +347,7 @@ exports.employeeEndBreak_patch = async(req, res)=>{
                  .then(async(data)=>{
                     await Employee.update({shiftStatus:"Working"}, {where:{id:employeeWithActiveShift.id}});
                  })
-                 return res.status(200).json({success:true, message:`Successfully ended a break!`})
+                 return res.status(200).json({success:true, message:`Successfully ended a break!`, endTime: date_ob.toISOString()})
             } 
             
         }else{
@@ -381,19 +374,32 @@ exports.employeeEndShift_patch = async(req,res)=>{
         const year = date_ob.getFullYear();
         const date = year + "-" + month + "-" + day;    
 
-        // check if the employee & shift Exists
+        // check if the employee with ACTIVE shift Exists
         const employeeWithActiveShift = await Employee.findOne({where:{email:req.user}, include:[{
             model:Shift, 
             where:{status:'Active'}
         }]});
+        // If exists returning error
         if(!employeeWithActiveShift){
             return res.status(400).json({success:false, message:`Employee has no Active shifts`})
         }
         
         // fetching Shift
         const shift = await Shift.findOne({where:{id: employeeWithActiveShift.shifts[0].id}});
-        const totalShiftTime = times.totalShiftTime(shift.startTime, time);
-        const shiftWithoutBreak = times.breakTimeCalculator(totalShiftTime, shift.totalBreak)
+        let position = ""
+        if(shift.break !== null){
+            position = shift.break.length -1
+        }
+        const startDate = new Date(shift.startTime);
+        const endDate = date_ob;
+        const msec =  Math.abs( endDate - startDate );
+        const totalShiftTime = new Date(msec).toISOString()
+        // console.log(totalShiftTime)
+        // console.log(typeof(totalShiftTime))
+        const t = `${new Date(totalShiftTime).getUTCHours()}:${new Date(totalShiftTime).getUTCMinutes()}:${new Date(totalShiftTime).getUTCSeconds()}`
+        // const t = Math.abs(new Date(totalShiftTime) - new Date(shift.totalBreak))
+        const shiftWithoutBreak = times.breakTimeCalculator(t, shift.totalBreak)
+        console.log(shiftWithoutBreak)
 
         const uploadSingle = upload("dsigmas3").single(
             "EndShiftImage"
@@ -403,18 +409,18 @@ exports.employeeEndShift_patch = async(req,res)=>{
                 console.log(err)
                 return res.status(400).json({success:false, message: `Error while uploading the Image to aws ERROR:${err.message}`});
             }
-            console.log(req.file)
+            // console.log(req.file)
+            // Checking if the image is sent
             if(req.file){
                 var endImageRoute = req.file.location
             }else{
                 var endImageRoute = "N/A"
             }
-            // console.log(imageRoute);
-            if(shift.break == null || shift.break.at(-1).end){
+            if(shift.break == null || shift.break[position].end){
                 // Ending Shift
                  Shift.update({
-                    endTime: time,
-                    endDate: date,
+                    endTime: date_ob.toISOString(),
+                    endDate: date_ob.toISOString(),
                     totalShiftLength: totalShiftTime,
                     shiftWithoutBreak: shiftWithoutBreak,
                     endImage: endImageRoute,
@@ -429,12 +435,12 @@ exports.employeeEndShift_patch = async(req,res)=>{
                     // Updating ShiftStatus
                     await Employee.update({shiftStatus: "Not Working"}, {where:{id: employeeWithActiveShift.id}})
                 });
-                return res.status(200).json({success: true, message:`Successfully ended a shift!`});
+                return res.status(200).json({success: true, message:`Successfully ended a shift!`, endShiftImage:endImageRoute, endShiftTime: date_ob.toISOString() });
             }else{
                 // Calculate the total time
                 // check if the total time in db is 00:00:00
-                const endBreak = {"end": time}
-                const totalBreakTime = times.breakTimeCalculator(shift.break.at(-1).start, time);
+                const endBreak = {"end": date_ob.toISOString()}
+                const totalBreakTime = times.breakTimeCalculator(shift.break[position].start, time);
                 const shiftwithoutBreak = times.breakTimeCalculator(totalShiftTime, totalBreakTime)
     
             
@@ -446,8 +452,8 @@ exports.employeeEndShift_patch = async(req,res)=>{
                         endImage: endImageRoute,
                         totalShiftLength: totalShiftTime,
                         shiftWithoutBreak: shiftwithoutBreak,
-                        endTime: time,
-                        endDate: date,
+                        endTime: date_ob.toISOString(),
+                        endDate: date_ob.toISOString(),
                         status:'Completed',
                     }, 
                         {where:{id:shift.id}
@@ -471,8 +477,8 @@ exports.employeeEndShift_patch = async(req,res)=>{
                         endImage: endImageRoute,
                         totalShiftLength: totalShiftLength,
                         shiftWithoutBreak: shiftwithoutBreak,
-                        endTime: time,
-                        endDate: date,
+                        endTime: date_ob.toISOString(),
+                        endDate: date_ob.toISOString(),
                         status:'Completed',
                         }, 
                          {where:{id:shift.id}
@@ -483,15 +489,11 @@ exports.employeeEndShift_patch = async(req,res)=>{
                             message: "Ended Shift"
                         })
                      })
-                      return res.status(200).json({success:true, message:`Successfully ended shift!`})
+                      return res.status(200).json({success:true, message:`Successfully ended shift!`, endShiftImage:endImageRoute, endShiftTime: date_ob.toISOString()})
                  } 
     
             }
         });
-              
-
-        // check if the shifts break has ended
-        // console.log(shift.break)
 
     } catch (error) {
         console.error(error);
@@ -499,12 +501,3 @@ exports.employeeEndShift_patch = async(req,res)=>{
     }
 }
 
-// exports.singleEmployee_get = async(req, res)=>{
-//     const employee = await Employee.findOne({where:{id: req.params.employeeId, branchId:req.branchId, pin: req.body.pin}, 
-//         include:[{model:Shift, order:[['createdAt','DESC']]}]
-//     });
-//     console.log(employee)
-//     if (employee) {
-//         return res.status(200).json({success:true,employee:employee});
-//     }
-// }

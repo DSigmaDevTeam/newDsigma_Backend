@@ -9,11 +9,11 @@ const Shift = sequelize.define("shift", {
         primaryKey: true,
       },
       startTime:{
-          type: Sequelize.STRING,
+          type: Sequelize.DATE,
           allowNull: false
       },
       startDate:{
-        type: Sequelize.STRING,
+        type: Sequelize.DATE,
         allowNull: false
       },
       startImage:{
@@ -21,10 +21,10 @@ const Shift = sequelize.define("shift", {
         allowNull: true
       },
       endTime:{
-        type: Sequelize.STRING
+        type: Sequelize.DATE
       },
       endDate:{
-        type: Sequelize.STRING
+        type: Sequelize.DATE
       },
       endImage:{
         type: Sequelize.STRING,
