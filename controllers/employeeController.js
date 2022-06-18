@@ -1,5 +1,5 @@
 const EmployeeDetails = require("../models/company/branch/employee/employeeDetails");
-// const Role = require("../models/role");
+const Role = require("../models/company/rolesAndPermissions/role");
 const Flag = require("../models/company/branch/employee/flag");
 const Employee = require("../models/company/branch/employee/employee");
 const nodemailer = require('nodemailer');
@@ -8,7 +8,9 @@ const ou = require('../utils/output');
 const bcrypt = require('bcrypt');
 const {transporter} = require("../utils/transporter");
 // const C = require('../models/company/rolesAndPermissions/employeeRole');
-// const EmployeeRole = require("../models/company/rolesAndPermissions/employeeRole");
+const EmployeeRole = require("../models/company/rolesAndPermissions/employeeRole");
+const multer = require('multer');
+const multerS3 = require('multer-s3-v2');
 
 
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -17,6 +19,35 @@ const REDIRECT_URI = process.env.REDIRECT_URI;
 const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
 const SENDER_EMAIL = process.env.SENDER_EMAIL;
 
+
+// function checkFileType( file, cb ){
+// 	// Allowed ext
+// 	const filetypes = /pdf/;
+// 	// Check ext
+// 	const extname = filetypes.test( path.extname( file.originalname ).toLowerCase());
+// 	// Check mime
+// 	const mimetype = filetypes.test( file.mimetype );
+// 	if( mimetype && extname ){
+// 		return cb( null, true );
+// 	} else {
+// 		cb( 'Error: PDF Only!' );
+// 	}
+// }
+
+// const uploadsBusinessGallery = multer({
+// 	storage: multerS3({
+// 		s3: s3,
+// 		bucket: 'orionnewbucket',
+// 		acl: 'public-read',
+// 		key: function (req, file, cb) {
+// 			cb( null, path.basename( file.originalname, path.extname( file.originalname ) ) + '-' + Date.now() + path.extname( file.originalname ) )
+// 		}
+// 	}),
+// 	limits:{ fileSize: 2000000 }, // In bytes: 2000000 bytes = 2 MB
+// 	fileFilter: function( req, file, cb ){
+// 		checkFileType( file, cb );
+// 	}
+// }).array( 'galleryImage', 4 );
 
 //Employee Details Form (TESTED) (Only mail Not working)
 exports.form_post = async(req,res)=>{
@@ -114,34 +145,64 @@ exports.form_post = async(req,res)=>{
       const output = ou.onboardingOutput(req.body)
 
 // Google & Nodemailer Config
-                        const oAuth2Client = new google.auth.OAuth2(
-                            CLIENT_ID,
-                            CLIENT_SECRET,
-                            REDIRECT_URI, 
-                        );
-                        oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+                        // const oAuth2Client = new google.auth.OAuth2(
+                        //     CLIENT_ID,
+                        //     CLIENT_SECRET,
+                        //     REDIRECT_URI, 
+                        // );
+                        // oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
                         try {
-                          const accessToken = await oAuth2Client.getAccessToken();
+                          // const accessToken = await oAuth2Client.getAccessToken();
                       
-                          const transport = nodemailer.createTransport({
+                          // const transport = nodemailer.createTransport({
+                          //   service: 'gmail',
+                          //   auth: {
+                          //     type: 'OAuth2',
+                          //     user: SENDER_EMAIL,
+                          //     clientId: CLIENT_ID,
+                          //     clientSecret: CLIENT_SECRET,
+                          //     refreshToken: REFRESH_TOKEN,
+                          //     accessToken: accessToken,
+                          //   },
+                          // });
+                          // const mailOptions = {
+                          //   from: `Abdul Kabir <${SENDER_EMAIL}>`,
+                          //   to: 'akabir247@gmail.com',
+                          //   subject: `Dashify: New Employee Invitation for ${req.body.email}`,
+                          //   html: output,
+                          // };
+                      
+                          // const result = await transport.sendMail(mailOptions);
+
+                          let transporter = nodemailer.createTransport({
                             service: 'gmail',
                             auth: {
-                              type: 'OAuth2',
-                              user: SENDER_EMAIL,
-                              clientId: CLIENT_ID,
-                              clientSecret: CLIENT_SECRET,
-                              refreshToken: REFRESH_TOKEN,
-                              accessToken: accessToken,
+                              user: "dev.dsigma@gmail.com",
+                              pass: "wisypdnzdhcvjngj",
                             },
                           });
-                          const mailOptions = {
-                            from: `Abdul Kabir <${SENDER_EMAIL}>`,
-                            to: 'akabir247@gmail.com',
+                          
+                          let mailOptions = {
+                            from: 'dsigmatesting@gmail.com',
+                            to: req.body.email,
                             subject: `Dashify: New Employee Invitation for ${req.body.email}`,
                             html: output,
+                            // attachments: [
+                            //   {
+                            //     filename: `${name}.pdf`,
+                            //     path: path.join(__dirname, `../../src/assets/books/${name}.pdf`),
+                            //     contentType: 'application/pdf',
+                            //   },
+                            // ],
                           };
-                      
-                          const result = await transport.sendMail(mailOptions);
+                          
+                          transporter.sendMail(mailOptions, function (err, info) {
+                            if (err) {
+                             console.log(`Something went wrong while sending email: ${err}`)
+                            } else {
+                              console.log("Email sent successfully")
+                            }
+                          });
                         //   console.log(result)
                           return res.status(200).json({
                             success: true,
@@ -287,7 +348,7 @@ exports.employee_get = async(req,res)=>{
 // Activating Employee (Not Tested)
 exports.activateEmployee_patch = async (req, res)=>{
   try {
-    // Fetching flag of the employee
+    // Fetching flag & employee
     const check = await Flag.findOne({where:{employeeId: req.params.empId}, include:[{model: Employee}]});
 
     if(check && check.flag === 'Onboarding'){
@@ -298,7 +359,7 @@ exports.activateEmployee_patch = async (req, res)=>{
       transporter.sendMail(content, async function (err, info) {
         if (err) {
           console.log(err);
-          return res.status(400).json({success: false, message: `Activation mail not sent`});
+          return res.status(400).json({success: false, message: `Activation mail not sent & user is not Activated`});
         } else {
           // Updating Flag
           await Flag.update({flag:'Active'}, {where:{user_id:req.params.empId}});
@@ -337,10 +398,11 @@ exports.register_post = async(req,res)=>{
             });
             // checking if the employee email exists
             if(employee){
-                // const branchRoles = Role.findOne({where:{}})
-                const user = await Employee.update({password: hashedPassword}, {where:{email: req.body.email}});
-                const flag = await Flag.update({flag: 'Registered'}, {where:{employeeId: employee.id}});
-                            //  await EmployeeRole.create({employeeId: employee.id, RoleId: })
+              const user = await Employee.update({password: hashedPassword}, {where:{email: req.body.email}});
+              const flag = await Flag.update({flag: 'Registered'}, {where:{employeeId: employee.id}});
+              const branchRoles = await Role.findOne({where:{role:"Basic", branchId: employee.branchId}});
+              // console.log(branchRoles.id)
+                             await EmployeeRole.create({employeeId: employee.id, roleId:branchRoles.id })
                 return res.status(200).json({
                     success:true,
                     message: "You have successfully registered"

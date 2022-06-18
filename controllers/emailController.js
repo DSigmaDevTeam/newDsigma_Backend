@@ -54,7 +54,22 @@ exports.email_post = async(req, res)=>{
     }
     const content = output.inviteOutput(req.body.email);
     try {
-      transporter.sendMail(content, function (err, info) {
+
+      let mailOptions = {
+        from: 'dsigmatesting@gmail.com',
+        to: req.body.email,
+        subject: `Dashify: New Employee Invitation for ${req.body.email}`,
+        html: output,
+        // attachments: [
+        //   {
+        //     filename: `${name}.pdf`,
+        //     path: path.join(__dirname, `../../src/assets/books/${name}.pdf`),
+        //     contentType: 'application/pdf',
+        //   },
+        // ],
+      };
+
+      transporter.sendMail(mailOptions, function (err, info) {
         if (err) {
           console.log(err);
           return res.status(400).json({success: false, message: `User Created, But email not sent`});

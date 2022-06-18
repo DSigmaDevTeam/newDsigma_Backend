@@ -6,7 +6,7 @@ const Flag = require('../models/company/branch/employee/flag');
 
 
 
-// GET SHIFT
+// GET SHIFT (TESTED)
 exports.shift_get = async(req,res)=>{
     try {
         // Checking if shift exists
@@ -28,7 +28,7 @@ exports.shift_get = async(req,res)=>{
     
 }
 
-// GET SHIFTS
+// GET SHIFTS (TESTED)
 exports.shifts_get = async (req,res)=>{
     try {
         // Fetching Employees & their details
@@ -55,7 +55,7 @@ exports.shifts_get = async (req,res)=>{
     }
 }
 
-// CREATE SHIFT
+// CREATE SHIFT (TESTED)
 exports.createShift_post = async(req,res)=>{
     try {
         // Checking if the Employee associated with shift exists.
@@ -64,7 +64,7 @@ exports.createShift_post = async(req,res)=>{
         // Validating if break attribute is array.
         if(Array.isArray(req.body.break)&& user){
                 await Shift.create({
-                    userId: req.params.empId,
+                    employeeId: req.params.empId,
                     startTime: req.body.startTime,
                     endTime: req.body.endTime,
                     startDate: req.body.startDate,
@@ -89,24 +89,24 @@ exports.createShift_post = async(req,res)=>{
     }
     }
 
-// EDIT SHIFT
+// EDIT SHIFT (TESTED)
 exports.shiftEdit_patch = async(req,res)=>{
     try {
         // Checking if the shift exists
         const shift = await Shift.findOne({where: {id:req.params.shiftId}});
         if (shift) {
             // Fetching logged in user
-            const updatedBy = await User.findOne({where:{email: req.user}});
+            const updatedBy = await Employee.findOne({where:{email: req.user}, include:[{model:EmployeeDetails}]});
             // Updating shift
             Shift.update(req.body,{where:{id:req.params.shiftId}})
             .then(async() => {
-                await ShiftTimeline.create({userId: updatedBy.id, 
+                await ShiftTimeline.create({employeeId: updatedBy.id, 
                     shiftId: req.params.shiftId, 
-                    message:`Shift has been updated by ${updatedBy.employee.fname} ${updatedBy.employee.lname}`
+                    message:`Shift has been updated by ${updatedBy.employeeDetail.fname} ${updatedBy.employeeDetail.lname}`
                 });
 
             })
-            return res.status(204).json({success:true, message:"details has been updated"});
+            return res.status(200).json({success:true, message:"details has been updated"});
         }else{
             return res.status(400).json({success:false, message:"Bad Request"});
         }
@@ -117,17 +117,21 @@ exports.shiftEdit_patch = async(req,res)=>{
     }
 }
 
-// APPROVE SHIFT
+// APPROVE SHIFT (TESTED)
 exports.approve_patch = async(req, res)=>{
     try {
         // checking if the shift exists
         const shift = await Shift.findOne({where:{id:req.params.shiftId}});
         if (shift) {
-             Shift.update({status: 'Approved'},{where:{id: req.params.shiftId}})
+             Shift.update({approved: 'true'},{where:{id: req.params.shiftId}})
             .then(async(data)=>{
                 const updatedBy = await Employee.findOne({where:{email: req.user}, include:[{model: EmployeeDetails}]})
                 .then(async(data)=>{
-                    await ShiftTimeline.create({message:`Shift has been updated by ${updatedBy.employee.fname} ${updatedBy.employee.lname}`});
+                    await ShiftTimeline.create({message:`Shift has been updated by ${data.employeeDetail.fname} ${data.employeeDetail.lname}`,
+                     employeeId:data.id,
+                     shiftId: req.params.shiftId
+                    
+                    });
 
                 })
 
@@ -142,7 +146,7 @@ exports.approve_patch = async(req, res)=>{
     }
 }
 
-// DELETE SHIFT
+// DELETE SHIFT (NOT TESTED)
 exports.shiftDelete_delete = async(req,res)=>{
     try {
         // Checking if the shift exists

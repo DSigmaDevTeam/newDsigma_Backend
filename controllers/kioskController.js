@@ -108,10 +108,11 @@ exports.dashboard_get = async(req, res) => {
 // Employee Login
 exports.employeeLogin_post = async(req, res) => {
     try {
-        console.log(req.params.employeeId)
-        console.log(req.branchId)
-        console.log(req.body.pin)
-        const employee = await Employee.findOne({where:{id: req.params.employeeId, branchId:req.branchId, pin: req.body.pin}, 
+        // console.log(req.params.employeeId)
+        // console.log(req.branchId)
+        // console.log(req.body.pin)
+        const employee = await Employee.findOne({where:{id: req.params.employeeId, branchId:req.branchId, pin: req.body.pin},
+            attributes:{exclude:['password']}, 
             include:[{model:EmployeeDetails}]
         });
         console.log(employee)
@@ -211,9 +212,9 @@ exports.employeeStartShift_post = async(req,res)=>{
                             shiftId: shift.id,
                             message:"Started Shift"
                         });
+                        await Employee.update({shiftStatus:"Working"},{where:{id:employee.id}})
+                        return res.status(200).json({success:true, message:`Successfully started a shift`, startImage: req.file.location, startTime: date_ob.toISOString(), shift:shift});
                     })
-                    await Employee.update({shiftStatus:"Working"},{where:{id:employee.id}})
-                    return res.status(200).json({success:true, message:`Successfully started a shift`, startImage: req.file.location, startTime: date_ob.toISOString()});
 
                 }).catch((err)=>{
                     console.log(err);
@@ -234,9 +235,9 @@ exports.employeeStartShift_post = async(req,res)=>{
                             shiftId: shift.id,
                             message:"Started Shift"
                         })
+                        await Employee.update({shiftStatus: "Working"}, {where:{id: employee.id}})
+                        return res.status(200).json({success:true, message:`Successfully started a shift`, startImage:"N/A", startTime: date_ob.toISOString(), shift:shift });
                     })
-                    await Employee.update({shiftStatus: "Working"}, {where:{id: employee.id}})
-                    return res.status(200).json({success:true, message:`Successfully started a shift`, startImage:"N/A", startTime: date_ob.toISOString() });
                 }).catch((err)=>{
                     console.log(err);
                     return res.status(500).json({success:false, message:`Something went wrong Please try again later`})
