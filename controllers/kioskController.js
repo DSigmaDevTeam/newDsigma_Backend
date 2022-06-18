@@ -280,7 +280,7 @@ exports.employeeStartBreak_patch = async(req,res)=>{
             if(shift.break != null && shift.break.at(-1).start && !shift.break.at(-1).end){
                 return res.status(400).json({success: false, message: 'Bad Method Call'})
             }else{
-                const startBreak = {"start":date_ob.toISOString()}
+                const startBreak = {"start":date_ob.toISOString(), "end":""}
                 // Updating Shift
             const sh = Shift.update({break: sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(startBreak))} ,{where:{id:shift.id}})
             .then(async(data)=>{
@@ -331,33 +331,54 @@ exports.employeeEndBreak_patch = async(req, res)=>{
             //Ending Break
             const endBreak = {"end": date_ob.toISOString()}
             const totalBreakTime = times.breakTimeCalculator(shift.break[position].start, date_ob.toISOString());
-            // console.log(totalBreakTime);
-            // console.log(totalBreakTime);
+          
 
             // Check if the totalBreakTime in DB is not === 00:00:00
+            // console.log(ba.break[positions])
+            // console.log(g)
             if(shift.totalBreak === `00:00:00`){
-               const breakEnd =   Shift.update({
-                   break:sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(endBreak)), 
-                   totalBreak: totalBreakTime}, 
-                   {where:{id:shift.id}
-                })
-                .then(async(data)=>{
-                    await Employee.update({shiftStatus:"Working"}, {where:{id:employeeWithActiveShift.id}});
-                })
-                return res.status(200).json({success:true, message:`Successfully ended a break!`, endTime: date_ob.toISOString(), shift:shift})
+                var ba =  await Shift.findOne({where:{id:shift.id}});
+                const positions = ba.break.length -1
+                ba.break[positions]['end'] = date_ob.toISOString();
+                const g = await Shift.update({break: ba.break, totalBreak:totalBreakTime},{where:{id:shift.id}});
+                         await Employee.update({shiftStatus:"Working"}, {where:{id:employeeWithActiveShift.id}});
+                // Shift.findOne({where:{id:shift.id}}).then(async(result)=>{
+                //     if(result){
+                //         console.log(result.break[position])
+                //         result.break[position].end = date_ob.toISOString()
+                //         // result.break[position].save();
+                //         await result.reload()
+                //         // await Employee.update({shiftStatus:"Working"}, {where:{id:employeeWithActiveShift.id}});
+
+                //     }
+                // })
+                // const sa = await Shift.findOne({where:{id:shift.id}});
+                // sa.break[position].end = date_ob.toISOString()
+
+            //    const breakEnd =   Shift.update({
+            //        break:sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(endBreak)), 
+            //        totalBreak: totalBreakTime}, 
+            //        {where:{id:shift.id}
+            //     })
+            //     .then(async(data)=>{
+            //     })
+                const endedShift = await Shift.findOne({where:{id:employeeWithActiveShift.shifts[0].id}})
+                // console.log(endedShift.toJSON());
+                return res.status(200).json({success:true, message:`Successfully ended a break!`, endTime: date_ob.toISOString(), shift:endedShift})
             }else{
 
                 // Adding existing time to the new time 
                 const totalBreak = addTimes(shift.totalBreak, totalBreakTime);
-                const breakEnd =   Shift.update({
-                    break:sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(endBreak)), 
-                    totalBreak: totalBreak}, 
-                    {where:{id:shift.id}
-                 })
-                 .then(async(data)=>{
-                    await Employee.update({shiftStatus:"Working"}, {where:{id:employeeWithActiveShift.id}});
-                 })
-                 return res.status(200).json({success:true, message:`Successfully ended a break!`, endTime: date_ob.toISOString(), shift:shift})
+                console.log(totalBreak)
+                var baz =  await Shift.findOne({where:{id:shift.id}});
+                const positions = baz.break.length -1
+                baz.break[positions]['end'] = date_ob.toISOString();
+                const g = await Shift.update({break: baz.break, totalBreak:totalBreak},{where:{id:shift.id}});
+                         await Employee.update({shiftStatus:"Working"}, {where:{id:employeeWithActiveShift.id}});
+
+                const endedShift = await Shift.findOne({where:{id:employeeWithActiveShift.shifts[0].id}});
+                console.log(endedShift);
+                return res.status(200).json({success:true, message:`Successfully ended a break!`, endTime: date_ob.toISOString(), shift:endedShift});
             } 
             
         }else{
@@ -449,15 +470,20 @@ exports.employeeEndShift_patch = async(req,res)=>{
             }else{
                 // Calculate the total time
                 // check if the total time in db is 00:00:00
-                const endBreak = {"end": date_ob.toISOString()}
+                // const endBreak = {"end": date_ob.toISOString()}
                 const totalBreakTime = times.breakTimeCalculator(shift.break[position].start, time);
                 const shiftwithoutBreak = times.breakTimeCalculator(totalShiftTime, totalBreakTime)
     
             
                 if(shift.totalBreak === `00:00:00`){
                     // Ending shift
+
+                    var brk =  await Shift.findOne({where:{id:shift.id}});
+                    const positions = brk.break.length -1
+                    brk.break[positions]['end'] = date_ob.toISOString();
+
                     const breakEnd = Shift.update({
-                        break:sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(endBreak)), 
+                        break:brk.break, 
                         totalBreak: totalBreakTime,
                         endImage: endImageRoute,
                         totalShiftLength: totalShiftTime,
@@ -477,12 +503,20 @@ exports.employeeEndShift_patch = async(req,res)=>{
                         // Updating Shift Status
                         await Employee.update({shiftStatus: "Not Working"}, {where:{id: employeeWithActiveShift.id}});
                      })
+                     return res.status(200).json({success:true, message:`Successfully ended shift!`, endShiftImage:endImageRoute, endShiftTime: date_ob.toISOString()})
+
                  }else{
      
                      // Adding existing time to the new time 
                      const totalBreak = times.addTimes([shift.totalBreak, totalBreakTime]);
+
+                    
+                     var brek =  await Shift.findOne({where:{id:shift.id}});
+                    const positions = brek.break.length -1
+                    brek.break[positions]['end'] = date_ob.toISOString();
+
                      const breakEnd =  Shift.update({
-                        break:sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(endBreak)), 
+                        break:brek.break, 
                         totalBreak: totalBreak,
                         endImage: endImageRoute,
                         totalShiftLength: totalShiftLength,
