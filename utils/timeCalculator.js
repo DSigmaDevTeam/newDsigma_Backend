@@ -82,6 +82,22 @@ function breakTimeCalculator(st,et){
     return convertSecToTime(time_diff);
 }
 
+function addTimes(time1, time2) {
+    var time1 = time1.split(':');
+         var time2 = time2.split(':');
+         var hours = Number(time1[0]) + Number(time2[0]);
+         var minutes = Number(time1[1]) + Number(time2[1]);
+         var seconds = Number(time1[2]) + Number(time2[2]);
+         if (seconds >= 60) {
+      minutes += Math.floor(seconds / 60);
+      seconds = seconds % 60;
+         }
+         if (minutes >= 60) {
+      hours += Math.floor(minutes / 60);
+      minutes = minutes % 60;
+         }
+         return (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+  }
 
 module.exports = {
     totalBreakTime,
@@ -89,5 +105,6 @@ module.exports = {
     convertSecToTime,
     getTimeInSeconds,
     totalShiftTime,
-    breakTimeCalculator
+    breakTimeCalculator,
+    addTimes
 }

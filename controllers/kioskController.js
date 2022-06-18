@@ -282,12 +282,14 @@ exports.employeeStartBreak_patch = async(req,res)=>{
             }else{
                 const startBreak = {"start":date_ob.toISOString(), "end":""}
                 // Updating Shift
-            const sh = Shift.update({break: sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(startBreak))} ,{where:{id:shift.id}})
-            .then(async(data)=>{
+            const sh = await Shift.update({break: sequelize.fn('array_append', sequelize.col('break'), JSON.stringify(startBreak))} ,{where:{id:shift.id}})
                 // Updating Shift Status
-                await Employee.update({shiftStatus:"On Break"},{where:{id:employee.id}});
-            });
-            return res.status(200).json({success:true, message:`Successfully started a break`, startTime: date_ob.toISOString(), shift:shift});
+            await Employee.update({shiftStatus:"On Break"},{where:{id:employee.id}});
+            // .then(async(data)=>{
+            // });
+            const sendShift = await Shift.findOne({where:{id: shift.id}});
+            console.log(sendShift)
+            return res.status(200).json({success:true, message:`Successfully started a break`, startTime: date_ob.toISOString(), shift:sendShift.break});
             }
         }else{
             return res.status(400).json({success:false, message:`Employee does not have any Active shift`})
@@ -508,7 +510,8 @@ exports.employeeEndShift_patch = async(req,res)=>{
                  }else{
      
                      // Adding existing time to the new time 
-                     const totalBreak = times.addTimes([shift.totalBreak, totalBreakTime]);
+                    //  const totalBreak = times.addTimes([shift.totalBreak, totalBreakTime]);
+                    const totalBreak = new Date(shift.totalBreak) + new Date(totalBreakTime)
 
                     
                      var brek =  await Shift.findOne({where:{id:shift.id}});
@@ -519,7 +522,7 @@ exports.employeeEndShift_patch = async(req,res)=>{
                         break:brek.break, 
                         totalBreak: totalBreak,
                         endImage: endImageRoute,
-                        totalShiftLength: totalShiftLength,
+                        totalShiftLength: totalShiftTime,
                         shiftWithoutBreak: shiftwithoutBreak,
                         endTime: date_ob.toISOString(),
                         endDate: date_ob.toISOString(),
