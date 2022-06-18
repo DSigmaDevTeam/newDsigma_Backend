@@ -289,7 +289,7 @@ exports.employeeStartBreak_patch = async(req,res)=>{
             // });
             const sendShift = await Shift.findOne({where:{id: shift.id}});
             console.log(sendShift)
-            return res.status(200).json({success:true, message:`Successfully started a break`, startTime: date_ob.toISOString(), shift:sendShift.break});
+            return res.status(200).json({success:true, message:`Successfully started a break`, startTime: date_ob.toISOString(), shift:sendShift});
             }
         }else{
             return res.status(400).json({success:false, message:`Employee does not have any Active shift`})
