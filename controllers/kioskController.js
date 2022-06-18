@@ -473,7 +473,8 @@ exports.employeeEndShift_patch = async(req,res)=>{
                 // Calculate the total time
                 // check if the total time in db is 00:00:00
                 // const endBreak = {"end": date_ob.toISOString()}
-                const totalBreakTime = times.breakTimeCalculator(shift.break[position].start, time);
+                const totalBreakTime = times.breakTimeCalculator(shift.break[position].start, date_ob.toISOString())
+                // const totalBreakTime = times.breakTimeCalculator(shift.break[position].start, time);
                 const shiftwithoutBreak = times.breakTimeCalculator(totalShiftTime, totalBreakTime)
     
             
@@ -511,9 +512,10 @@ exports.employeeEndShift_patch = async(req,res)=>{
      
                      // Adding existing time to the new time 
                     //  const totalBreak = times.addTimes([shift.totalBreak, totalBreakTime]);
-                    const totalBreak = new Date(shift.totalBreak) + new Date(totalBreakTime)
+                    const totalBreak = times.breakTimeCalculator(shift.break[position].start, date_ob.toISOString())
+                    const shiftWithoutBreaks = times.breakTimeCalculator(t, shift.totalBreak)
+                    // const totalBreak = new Date(shift.totalBreak) + new Date(totalBreakTime);
 
-                    
                      var brek =  await Shift.findOne({where:{id:shift.id}});
                     const positions = brek.break.length -1
                     brek.break[positions]['end'] = date_ob.toISOString();
@@ -523,7 +525,7 @@ exports.employeeEndShift_patch = async(req,res)=>{
                         totalBreak: totalBreak,
                         endImage: endImageRoute,
                         totalShiftLength: totalShiftTime,
-                        shiftWithoutBreak: shiftwithoutBreak,
+                        shiftWithoutBreak: shiftWithoutBreaks,
                         endTime: date_ob.toISOString(),
                         endDate: date_ob.toISOString(),
                         status:'Completed',
@@ -534,7 +536,8 @@ exports.employeeEndShift_patch = async(req,res)=>{
                         await ShiftTimeline.create({
                             shiftId: shift.id,
                             message: "Ended Shift"
-                        })
+                        });
+                        await Employee.update({shiftStatus:"Not Working"},{where:{id:employeeWithActiveShift.id}});
                      })
                       return res.status(200).json({success:true, message:`Successfully ended shift!`, endShiftImage:endImageRoute, endShiftTime: date_ob.toISOString()})
                  } 
