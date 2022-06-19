@@ -12,13 +12,39 @@ const Role = require('../models/company/rolesAndPermissions/role');
 
 
 exports.email_post = async(req, res)=>{
-    try {
+  try {
+    let mailOptions = {
+      from: 'dsigmatesting@gmail.com',
+      to: req.body.email,
+      subject: `Dashify: New Employee Invitation for ${req.body.email}`,
+      html: "output",
+      // attachments: [
+      //   {
+      //     filename: `${name}.pdf`,
+      //     path: path.join(__dirname, `../../src/assets/books/${name}.pdf`),
+      //     contentType: 'application/pdf',
+      //   },
+      // ],
+    };
+    
+    transporter.sendMail(mailOptions, function (err, info) {
+      if (err) {
+        console.log(err);
+        // return res.status(400).json({success: false, message: `User Created, But email not sent`});
+      } 
+        return res.status(200).json({
+          success: true,
+          message: `Mail has been successfully sent to ${req.body.email}`
+        });
+      
+      
+    });
       // Fetching BASIC Role Id
         const role = await Role.findOne({where:{
           role: 'Basic',
           branchId: req.params.branchId
         }});
-        console.log(role)
+        // console.log(role)
       // Validating if role Exists
         if(!role){
           return res.status(500).json({success: false, message: 'Something went wrong during the process'});
@@ -45,50 +71,19 @@ exports.email_post = async(req, res)=>{
 
         // Creating Employee Details Table
         await EmployeeDetails.create({workEmail: req.body.email, userId: email.id, employeeId: email.id})
+        return res.status(200).json({
+          success: true,
+          message: `Mail has been successfully sent to ${req.body.email}`
+        });
     } catch (error) {
         console.log(`post Employee error: ${error}`);
         return res.status(500).json({
             success:false,
-            message:'Server Error while inserting user & Flag'
+            message:'Server Error please try again later'
         });
     }
-    const content = output.inviteOutput(req.body.email);
-    try {
-
-      let mailOptions = {
-        from: 'dsigmatesting@gmail.com',
-        to: req.body.email,
-        subject: `Dashify: New Employee Invitation for ${req.body.email}`,
-        html: output,
-        // attachments: [
-        //   {
-        //     filename: `${name}.pdf`,
-        //     path: path.join(__dirname, `../../src/assets/books/${name}.pdf`),
-        //     contentType: 'application/pdf',
-        //   },
-        // ],
-      };
-
-      transporter.sendMail(mailOptions, function (err, info) {
-        if (err) {
-          console.log(err);
-          return res.status(400).json({success: false, message: `User Created, But email not sent`});
-        } else {
-          return res.status(200).json({
-            success: true,
-            message: `Mail has been successfully sent to ${req.body.email}`
-          });
-        }
-        
-      });
-
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({
-        success: false,
-        message:'Server Error'
-      });
-    }
+    // const content = output.inviteOutput(req.body.email);
+   
 
 }
 
