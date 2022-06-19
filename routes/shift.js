@@ -12,7 +12,7 @@ const LoginRequired = require('../middlewares/loginRequired');
 // Create Shift Shift {AUTH REQUIRED}
 router.post('/employee/addshift/:empId',LoginRequired, shiftController.createShift_post);
 //  Fetch all shifts with user details {AUTH REQUIRED}
-router.get('/employees/shifts',LoginRequired, shiftController.shifts_get);
+router.post('/employees/shifts',LoginRequired, shiftController.shifts_post);
 // Approve shift {AUTH REQUIRED}
 router.patch('/employee/shiftapprove/:shiftId',LoginRequired, shiftController.approve_patch);
 // Delete shift {AUTH REQUIRED}

@@ -7,10 +7,12 @@ const Employee = require("../models/company/branch/employee/employee");
 module.exports = (req, res, next) => {
     try {
         const { authorization } = req.headers
+        console.log(`AUTHORIZATION: ${authorization}`)
         if (!authorization) {
             return res.status(401).json({ message: "You must be logged in" })
         }
         const token = authorization.replace("Bearer ", "")
+        console.log(`TOKEN: ${token}`)
         jwt.verify(token, JWT_SECRET, (err, payload) => {
             if (err) {
                 return res.status(401).json({ message: "You must be logged in" })

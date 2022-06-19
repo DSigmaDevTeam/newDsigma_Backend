@@ -30,7 +30,7 @@ exports.shift_get = async(req,res)=>{
 }
 
 // GET SHIFTS (TESTED)
-exports.shifts_get = async (req,res)=>{
+exports.shifts_post = async (req,res)=>{
     try {
         // Fetching Employees & their details
         const startDate = new Date(req.body.startDate);
