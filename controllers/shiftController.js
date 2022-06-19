@@ -3,6 +3,7 @@ const EmployeeDetails = require('../models/company/branch/employee/employeeDetai
 const ShiftTimeline = require('../models/company/branch/shift/shiftTimeline');
 const Shift = require('../models/company/branch/shift/shift');
 const Flag = require('../models/company/branch/employee/flag');
+const { Op } = require('sequelize');
 
 
 
@@ -32,6 +33,9 @@ exports.shift_get = async(req,res)=>{
 exports.shifts_get = async (req,res)=>{
     try {
         // Fetching Employees & their details
+        const startDate = new Date(req.body.startDate);
+        const endDate = new Date(req.body.endDate);
+        endDate.setDate(endDate.getDate() + 1);
         const users = await Employee.findAll({where:{}, 
             order:[['createdAt', 'DESC']],
         attributes: ['email','createdAt', 'id'], 
@@ -41,7 +45,7 @@ exports.shifts_get = async (req,res)=>{
              where:{flag:'Active'}, attributes: ['flag']
             },
             {model:EmployeeDetails, attributes:['fname', 'lname', 'mobNumber', 'title']},
-            {model: Shift, include:[{model: ShiftTimeline}]},
+            {model: Shift, where:{"createdAt" : {[Op.between] : [startDate , endDate ]}},include:[{model: ShiftTimeline}]},
         ]
     });
         return res.status(200).json({
