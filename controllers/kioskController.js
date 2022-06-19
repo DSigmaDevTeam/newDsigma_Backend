@@ -430,9 +430,10 @@ exports.employeeEndShift_patch = async(req,res)=>{
         // console.log(totalShiftTime)
         // console.log(typeof(totalShiftTime))
         const t = `${new Date(totalShiftTime).getUTCHours()}:${new Date(totalShiftTime).getUTCMinutes()}:${new Date(totalShiftTime).getUTCSeconds()}`
+        const timez = new Date(totalShiftTime)
         // const t = Math.abs(new Date(totalShiftTime) - new Date(shift.totalBreak))
         const shiftWithoutBreak = times.breakTimeCalculator(t, shift.totalBreak)
-        console.log(shiftWithoutBreak)
+        // console.log(shiftWithoutBreak)
 
         const uploadSingle = upload("dsigmas3").single(
             "EndShiftImage"
@@ -454,7 +455,7 @@ exports.employeeEndShift_patch = async(req,res)=>{
                  Shift.update({
                     endTime: date_ob.toISOString(),
                     endDate: date_ob.toISOString(),
-                    totalShiftLength: totalShiftTime,
+                    totalShiftLength: timez.toUTCString().slice(17,25),
                     shiftWithoutBreak: shiftWithoutBreak,
                     endImage: endImageRoute,
                     status: 'Completed'
@@ -489,7 +490,7 @@ exports.employeeEndShift_patch = async(req,res)=>{
                         break:brk.break, 
                         totalBreak: totalBreakTime,
                         endImage: endImageRoute,
-                        totalShiftLength: totalShiftTime,
+                        totalShiftLength: timez.toUTCString().slice(17,25),
                         shiftWithoutBreak: shiftwithoutBreak,
                         endTime: date_ob.toISOString(),
                         endDate: date_ob.toISOString(),
@@ -524,7 +525,7 @@ exports.employeeEndShift_patch = async(req,res)=>{
                         break:brek.break, 
                         totalBreak: totalBreak,
                         endImage: endImageRoute,
-                        totalShiftLength: totalShiftTime,
+                        totalShiftLength: timez.toUTCString().slice(17,25),
                         shiftWithoutBreak: shiftWithoutBreaks,
                         endTime: date_ob.toISOString(),
                         endDate: date_ob.toISOString(),
