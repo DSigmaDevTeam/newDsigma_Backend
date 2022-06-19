@@ -398,15 +398,21 @@ exports.register_post = async(req,res)=>{
             });
             // checking if the employee email exists
             if(employee){
-              const user = await Employee.update({password: hashedPassword}, {where:{email: req.body.email}});
-              const flag = await Flag.update({flag: 'Registered'}, {where:{employeeId: employee.id}});
-              const branchRoles = await Role.findOne({where:{role:"Basic", branchId: employee.branchId}});
-              // console.log(branchRoles.id)
-                             await EmployeeRole.create({employeeId: employee.id, roleId:branchRoles.id })
-                return res.status(200).json({
-                    success:true,
-                    message: "You have successfully registered"
-                });
+              console.log(employee.password)
+              if(!employee.password){
+                const user = await Employee.update({password: hashedPassword}, {where:{email: req.body.email}});
+                const flag = await Flag.update({flag: 'Registered'}, {where:{employeeId: employee.id}});
+                const branchRoles = await Role.findOne({where:{role:"Basic", branchId: employee.branchId}});
+                // console.log(branchRoles.id)
+                               await EmployeeRole.create({employeeId: employee.id, roleId:branchRoles.id })
+                  return res.status(200).json({
+                      success:true,
+                      message: "You have successfully registered"
+                  });
+
+              }else{
+                return res.status(400).json({success:false, message:"User has already been registered"})
+              }
             } else{
                 return res.status(404).json({
                     success:false,
