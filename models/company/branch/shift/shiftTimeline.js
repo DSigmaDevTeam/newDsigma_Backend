@@ -1,7 +1,7 @@
 const Sequelize = require("sequelize");
 const sequelize = require("../../../../config/database");
 
-const ShiftTimeline = sequelize.define("ShiftTimelineTimeline", {
+const ShiftTimeline = sequelize.define("shiftTimeline", {
     id: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
