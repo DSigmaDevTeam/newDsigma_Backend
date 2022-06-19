@@ -398,7 +398,7 @@ exports.register_post = async(req,res)=>{
             });
             // checking if the employee email exists
             if(employee){
-              console.log(employee.password)
+              // console.log(employee.password)
               if(!employee.password){
                 const user = await Employee.update({password: hashedPassword}, {where:{email: req.body.email}});
                 const flag = await Flag.update({flag: 'Registered'}, {where:{employeeId: employee.id}});
