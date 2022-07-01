@@ -132,7 +132,7 @@ exports.email_post = async(req, res)=>{
             email: req.body.email.toLowerCase(),
             pin:pin,
             branchId: req.params.branchId,
-            roleId: role.id,
+            // roleId: role.id,
             shiftStatus: "Not Working"
             // isBranchManager: false
         });
