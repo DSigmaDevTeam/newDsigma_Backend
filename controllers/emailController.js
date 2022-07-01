@@ -117,15 +117,15 @@ exports.email_post = async(req, res)=>{
       
     });
       // Fetching BASIC Role Id
-        const role = await Role.findOne({where:{
-          role: 'Basic',
-          branchId: req.params.branchId
-        }});
+        // const role = await Role.findOne({where:{
+        //   role: 'Basic',
+        //   branchId: req.params.branchId
+        // }});
         // console.log(role)
       // Validating if role Exists
-        if(!role){
-          return res.status(500).json({success: false, message: 'Something went wrong during the process'});
-        }
+        // if(!role){
+        //   return res.status(500).json({success: false, message: 'Something went wrong during the process'});
+        // }
       //Generating Employee PIN 
         const pin  = await pinGenerator.userPinGen();
         var email = await Employee.create({
