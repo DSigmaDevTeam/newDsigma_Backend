@@ -31,6 +31,7 @@ exports.shift_get = async(req,res)=>{
 
 // GET SHIFTS (TESTED)
 exports.shifts_post = async (req,res)=>{
+    console.log(req._events)
     try {
         // Fetching Employees & their details
         const startDate = new Date(req.body.startDate);
@@ -96,21 +97,43 @@ exports.createShift_post = async(req,res)=>{
 // EDIT SHIFT (TESTED)
 exports.shiftEdit_patch = async(req,res)=>{
     try {
+        
         // Checking if the shift exists
         const shift = await Shift.findOne({where: {id:req.params.shiftId}});
         if (shift) {
             // Fetching logged in user
             const updatedBy = await Employee.findOne({where:{email: req.user}, include:[{model:EmployeeDetails}]});
-            // Updating shift
-            Shift.update(req.body,{where:{id:req.params.shiftId}})
-            .then(async() => {
-                await ShiftTimeline.create({employeeId: updatedBy.id, 
-                    shiftId: req.params.shiftId, 
-                    message:`Shift has been updated by ${updatedBy.employeeDetail.fname} ${updatedBy.employeeDetail.lname}`
-                });
 
-            })
-            return res.status(200).json({success:true, message:"details has been updated"});
+            // checking if the shift is Active & endTime exists in body 
+            if(shift.status === "Active" && req.body.endTime){
+                
+                //changing employees shiftStatus and shifts status
+                Shift.update(req.body,{where:{id:req.params.shiftId}})
+                .then(async() => {
+                    await ShiftTimeline.create({employeeId: updatedBy.id, 
+                        shiftId: req.params.shiftId, 
+                        message:`Shift has been updated by ${updatedBy.employeeDetail.fname} ${updatedBy.employeeDetail.lname}`
+                    });
+                    await Employee.update({shiftStatus:"Not Working"}, {where:{id:shift.employeeId}});
+                    await Shift.update({status:"Completed"}, {where:{id:shift.id}});
+    
+                })
+                return res.status(200).json({success:true, message:"details has been updated"});
+
+            } else{
+                
+                // Updating shift
+                Shift.update(req.body,{where:{id:req.params.shiftId}})
+                .then(async() => {
+                    await ShiftTimeline.create({employeeId: updatedBy.id, 
+                        shiftId: req.params.shiftId, 
+                        message:`Shift has been updated by ${updatedBy.employeeDetail.fname} ${updatedBy.employeeDetail.lname}`
+                    });
+    
+                })
+                return res.status(200).json({success:true, message:"details has been updated"});
+            }
+
         }else{
             return res.status(400).json({success:false, message:"Bad Request"});
         }
@@ -150,12 +173,18 @@ exports.approve_patch = async(req, res)=>{
     }
 }
 
-// DELETE SHIFT (NOT TESTED)
+// DELETE SHIFT (TESTED)
 exports.shiftDelete_delete = async(req,res)=>{
     try {
-        // Checking if the shift exists
+        // Fetching shift
         const shift = await Shift.findOne({where:{id: req.params.shiftId}});
+        // Checking if the shift exists
         if (shift) {
+            // checking if the shift is active
+            if(shift.status === "Active"){
+                // updating the employee shiftStatus to "Not Working"
+                await Employee.update({shiftStatus:"Not Working"}, {where:{id:shift.employeeId}});
+            }
             await Shift.destroy({where:{id:req.params.shiftId}});
             return res.status(200).json({success:true, message:`Shift has been deleted successfully`});
             

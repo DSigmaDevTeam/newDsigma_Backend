@@ -3,73 +3,66 @@ const Role = require("../models/company/rolesAndPermissions/role");
 const Flag = require("../models/company/branch/employee/flag");
 const Employee = require("../models/company/branch/employee/employee");
 const nodemailer = require('nodemailer');
-const {google} = require('googleapis');
+// const {google} = require('googleapis');
 const ou = require('../utils/output');
 const bcrypt = require('bcrypt');
 const {transporter} = require("../utils/transporter");
-// const C = require('../models/company/rolesAndPermissions/employeeRole');
 const EmployeeRole = require("../models/company/rolesAndPermissions/employeeRole");
+const aws = require( 'aws-sdk' );
+const multerS3 = require( 'multer-s3-v2' );
 const multer = require('multer');
-const multerS3 = require('multer-s3-v2');
+const path = require( 'path' );
 
 
-const CLIENT_ID = process.env.CLIENT_ID;
-const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const REDIRECT_URI = process.env.REDIRECT_URI;
-const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
-const SENDER_EMAIL = process.env.SENDER_EMAIL;
 
+// const CLIENT_ID = process.env.CLIENT_ID;
+// const CLIENT_SECRET = process.env.CLIENT_SECRET;
+// const REDIRECT_URI = process.env.REDIRECT_URI;
+// const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
+// const SENDER_EMAIL = process.env.SENDER_EMAIL;
 
-// function checkFileType( file, cb ){
-// 	// Allowed ext
-// 	const filetypes = /pdf/;
-// 	// Check ext
-// 	const extname = filetypes.test( path.extname( file.originalname ).toLowerCase());
-// 	// Check mime
-// 	const mimetype = filetypes.test( file.mimetype );
-// 	if( mimetype && extname ){
-// 		return cb( null, true );
-// 	} else {
-// 		cb( 'Error: PDF Only!' );
-// 	}
-// }
+// S3 Instance
+const s3 = new aws.S3({
+  accessKeyId: process.env.S3_ACCESS_KEY,
+  secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+  Bucket: 'dsigma-employee-files'
+});
 
-// const uploadsBusinessGallery = multer({
-// 	storage: multerS3({
-// 		s3: s3,
-// 		bucket: 'orionnewbucket',
-// 		acl: 'public-read',
-// 		key: function (req, file, cb) {
-// 			cb( null, path.basename( file.originalname, path.extname( file.originalname ) ) + '-' + Date.now() + path.extname( file.originalname ) )
-// 		}
-// 	}),
-// 	limits:{ fileSize: 2000000 }, // In bytes: 2000000 bytes = 2 MB
-// 	fileFilter: function( req, file, cb ){
-// 		checkFileType( file, cb );
-// 	}
-// }).array( 'galleryImage', 4 );
+// Check File Type Function
+function checkFileType( file, cb ){
+  // console.log(file)
+// Allowed ext
+const filetypes = /pdf|doc|docx|txt|rtf|jpg|png/;
+// Check ext
+const extname = filetypes.test( path.extname( file.originalname ).toLowerCase());
+// Check mime
+const mimetype = filetypes.test( file.mimetype );
+if( mimetype && extname ){
+  return cb( null, true );
+} else {
+  cb( 'Error: pdf,doc,docx,txt,rtf,jpg,png Only!' );
+}
+}
+
+// Upload Files Function
+const uploadsBusinessGallery = multer({
+storage: multerS3({
+  s3: s3,
+  bucket: 'dsigma-employee-files',
+  // acl: 'public-read',
+  key: function (req, file, cb) {
+    cb( null, path.basename( file.originalname, path.extname( file.originalname ) ) + '-' + Date.now() + path.extname( file.originalname ) )
+  }
+}),
+limits:{ fileSize: 2000000 }, // In bytes: 2000000 bytes = 2 MB
+fileFilter: function( req, file, cb ){
+  checkFileType( file, cb );
+}
+}).array( 'galleryImage', 3 );
 
 //Employee Details Form (TESTED) (Only mail Not working)
-exports.form_post = async(req,res)=>{
-  console.log(req.user);
-  console.log(req.files);
-  console.log(req.body);
-  let file1;
-  let file2;
-  let file3;
-  if(req.files.length === 3){
-    file1 = req.files[0];
-    file2 = req.files[1];
-    file3 = req.files[2];
-  }else if(req.files.length === 2){
-    file1 = req.files[0];
-    file2 = req.files[1];
-    file3 = {path:null};
-  } else{
-    file1 = req.files[0];
-    file2 = {path:null};
-    file3 = {path: null};
-  }
+exports.form_post = async(req,res)=>{   
+
   try {
     const user = await Employee.findOne({where:{
       email: req.user
@@ -82,98 +75,172 @@ exports.form_post = async(req,res)=>{
 // if to check if the users flag is "Registered"
     if(user && user.flag.flag === "Registered"){
       
+  //  Uploading files to aws s3 
+      uploadsBusinessGallery( req, res, async ( error ) => {
+        // console.log( 'files', req.files );
+        if( error ){
+          console.log( 'errors', error );
+          // res.json( { error: error } );
+        } else {
+          // If File not found
+          if( req.files === undefined ){
+            console.log( 'Error: No File Selected!' );
+            // res.json( 'Error: No File Selected' );
+          } else {
+            // If Success
+     
+            let fileArray = req.files,
+              fileLocation;
+            var galleryImgLocationArray = [];
+            for ( let i = 0; i < fileArray.length; i++ ) {
+              fileLocation = fileArray[ i ].location;
+              // console.log( 'fileName', fileLocation );
+              galleryImgLocationArray.push( fileLocation )
+            }
+
+      // Inserting EMP details
+            await EmployeeDetails.update({
+              userId: user.id,
+      // Info
+              title: req.body.title,
+              fname: req.body.fname,
+              lname: req.body.lname,
+              workEmail: req.body.workEmail,
+              personalEmail: user.email,
+              mobNumber: req.body.mobNumber,
+      // Personal Info
+              DOB: req.body.DOB,
+              maritalStatus: req.body.maritalStatus,
+              gender: req.body.gender,
+              medicareNumber: req.body.medicareNumber,
+              driversLicense: req.body.driversLicense,
+              passportNumber: req.body.passportNumber,
+              address: req.body.address,
+              address2: req.body.address2,
+              city: req.body.city,
+              state: req.body.state,
+              postCode: req.body.postCode,
+              Country: req.body.country,
+      // Bank Details
+              bankName:req.body.bankName,
+              BSB: req.body.BSB,
+              accountNumber: req.body.accountNumber,
+      // TAX INFO
+              taxFileNumber: req.body.taxFileNumber,
+      // Working Rights
+              workingRights: req.body.workingRights,
+      // Primary Contact
+              firstName: req.body.firstName,
+              lastName: req.body.lastName,
+              email: req.body.email,
+              mobile: req.body.mobile,
+              workPhone: req.body.workPhone,
+              contactType: req.body.contactType,
+      // Secondary Contact
+              sfname: req.body.sfname,
+              slname: req.body.slname,
+              semail: req.body.semail,
+              smobNo: req.body.smobNo,
+              sworkNo: req.body.sworkNo,
+              scontactType: req.body.scontactType,
+              linkedIn: req.body.linkedIn,
+      // Files
+              file1: galleryImgLocationArray[0],
+              file2: galleryImgLocationArray[1],
+              file3: galleryImgLocationArray[2],
+            },{where:{userId: user.id}});
+      
+            // const emp = await Employee.update(req.body, {where:{userId: user.id}});  
+      
+      
+      // Updating Flag
+            await Flag.update({flag: 'Onboarding'}, {where:{user_id: user.id}});
+      
+      
+          }
+        }
+      });
+      // var file1 = null;
+      // var file2 = null;
+      // var file3 = null;
+      // console.log("fileee Location",req.files[1])
+      // if(req.files.length === 3){
+      //   file1 = req.files[0].location;
+      //   file2 = req.files[1].location;
+      //   file3 = req.files[2].location;
+      // }else if(req.files.length === 2){
+      //   file1 = req.files[0].location;
+      //   file2 = req.files[1].location;
+      // }else if(req.files.length === 1){
+      //   file1 = req.files[0].location;
+      // }
+
 // Inserting EMP details
-       await EmployeeDetails.update({
-        userId: user.id,
-// Info
-        title: req.body.title,
-        fname: req.body.fname,
-        lname: req.body.lname,
-        workEmail: req.body.workEmail,
-        personalEmail: user.email,
-        mobNumber: req.body.mobNumber,
-// Personal Info
-        DOB: req.body.DOB,
-        maritalStatus: req.body.maritalStatus,
-        gender: req.body.gender,
-        medicareNumber: req.body.medicareNumber,
-        driversLicense: req.body.driversLicense,
-        passportNumber: req.body.passportNumber,
-        address: req.body.address,
-        address2: req.body.address2,
-        city: req.body.city,
-        state: req.body.state,
-        postCode: req.body.postCode,
-        Country: req.body.country,
-// Bank Details
-        bankName:req.body.bankName,
-        BSB: req.body.BSB,
-        accountNumber: req.body.accountNumber,
-// TAX INFO
-        taxFileNumber: req.body.taxFileNumber,
-// Working Rights
-        workingRights: req.body.workingRights,
-// Primary Contact
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        email: req.body.email,
-        mobile: req.body.mobile,
-        workPhone: req.body.workPhone,
-        contactType: req.body.contactType,
-// Secondary Contact
-        sfname: req.body.sfname,
-        slname: req.body.slname,
-        semail: req.body.semail,
-        smobNo: req.body.smobNo,
-        sworkNo: req.body.sworkNo,
-        scontactType: req.body.scontactType,
-        linkedIn: req.body.linkedIn,
-// Files
-        // file1: file1.path,
-        // file2: file2.path,
-        // file3: file3.path,
-      },{where:{userId: user.id}});
+        // console.log(galleryImgLocationArray[1]);
+        // console.log("User Id is ", user.id)
+        // console.log("file Location", file1)
+//        await EmployeeDetails.update({
+//         userId: user.id,
+// // Info
+//         title: req.body.title,
+//         fname: req.body.fname,
+//         lname: req.body.lname,
+//         workEmail: req.body.workEmail,
+//         personalEmail: user.email,
+//         mobNumber: req.body.mobNumber,
+// // Personal Info
+//         DOB: req.body.DOB,
+//         maritalStatus: req.body.maritalStatus,
+//         gender: req.body.gender,
+//         medicareNumber: req.body.medicareNumber,
+//         driversLicense: req.body.driversLicense,
+//         passportNumber: req.body.passportNumber,
+//         address: req.body.address,
+//         address2: req.body.address2,
+//         city: req.body.city,
+//         state: req.body.state,
+//         postCode: req.body.postCode,
+//         Country: req.body.country,
+// // Bank Details
+//         bankName:req.body.bankName,
+//         BSB: req.body.BSB,
+//         accountNumber: req.body.accountNumber,
+// // TAX INFO
+//         taxFileNumber: req.body.taxFileNumber,
+// // Working Rights
+//         workingRights: req.body.workingRights,
+// // Primary Contact
+//         firstName: req.body.firstName,
+//         lastName: req.body.lastName,
+//         email: req.body.email,
+//         mobile: req.body.mobile,
+//         workPhone: req.body.workPhone,
+//         contactType: req.body.contactType,
+// // Secondary Contact
+//         sfname: req.body.sfname,
+//         slname: req.body.slname,
+//         semail: req.body.semail,
+//         smobNo: req.body.smobNo,
+//         sworkNo: req.body.sworkNo,
+//         scontactType: req.body.scontactType,
+//         linkedIn: req.body.linkedIn,
+// // Files
+//         file1: file1,
+//         file2: file2,
+//         file3: file3,
+//       },{where:{userId: user.id}});
 
       // const emp = await Employee.update(req.body, {where:{userId: user.id}});  
 
 
 // Updating Flag
-      await Flag.update({flag: 'Onboarding'}, {where:{user_id: user.id}});
+      // await Flag.update({flag: 'Onboarding'}, {where:{user_id: user.id}});
 
 // Email Data
-      console.log(req.body)
+      // console.log(req.body)
       const output = ou.onboardingOutput(req.body)
 
-// Google & Nodemailer Config
-                        // const oAuth2Client = new google.auth.OAuth2(
-                        //     CLIENT_ID,
-                        //     CLIENT_SECRET,
-                        //     REDIRECT_URI, 
-                        // );
-                        // oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
                         try {
-                          // const accessToken = await oAuth2Client.getAccessToken();
-                      
-                          // const transport = nodemailer.createTransport({
-                          //   service: 'gmail',
-                          //   auth: {
-                          //     type: 'OAuth2',
-                          //     user: SENDER_EMAIL,
-                          //     clientId: CLIENT_ID,
-                          //     clientSecret: CLIENT_SECRET,
-                          //     refreshToken: REFRESH_TOKEN,
-                          //     accessToken: accessToken,
-                          //   },
-                          // });
-                          // const mailOptions = {
-                          //   from: `Abdul Kabir <${SENDER_EMAIL}>`,
-                          //   to: 'akabir247@gmail.com',
-                          //   subject: `Dashify: New Employee Invitation for ${req.body.email}`,
-                          //   html: output,
-                          // };
-                      
-                          // const result = await transport.sendMail(mailOptions);
-
                           let transporter = nodemailer.createTransport({
                             service: 'gmail',
                             auth: {
@@ -262,7 +329,7 @@ exports.employees_get = async(req,res)=>{
 }
 
 
-// Updating Employee (Not Tested)
+// Updating Employee (Tested)
 exports.employee_patch = async(req,res)=>{
   try {
     // Checking if flag exists
@@ -290,7 +357,7 @@ exports.employee_patch = async(req,res)=>{
 }
 
 
-// Deleting Employee (Not Tested)
+// Deleting Employee (Tested)
 exports.employee_delete = async(req,res)=>{
   try {
     const emp = await Employee.destroy({where: {id: req.params.empId},truncate:true});
@@ -345,7 +412,7 @@ exports.employee_get = async(req,res)=>{
 }
 
 
-// Activating Employee (Not Tested)
+// Activating Employee (Tested)
 exports.activateEmployee_patch = async (req, res)=>{
   try {
     // Fetching flag & employee

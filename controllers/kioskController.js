@@ -12,7 +12,10 @@ const multer = require('multer');
 const multerS3 = require("multer-s3-v2");
 
 
-
+Date.prototype.addHours= function(h){
+    this.setHours(this.getHours()+h);
+    return this;
+}
 
 function addTimes(time1, time2) {
     var time1 = time1.split(':');
@@ -108,20 +111,45 @@ exports.dashboard_get = async(req, res) => {
 // Employee Login
 exports.employeeLogin_post = async(req, res) => {
     try {
-        // console.log(req.params.employeeId)
-        // console.log(req.branchId)
-        // console.log(req.body.pin)
+
         const employee = await Employee.findOne({where:{id: req.params.employeeId, branchId:req.branchId, pin: req.body.pin},
             attributes:{exclude:['password']}, 
             include:[{model:EmployeeDetails}]
         });
-        console.log(employee)
-        // let shift = "N/A";
-        let shift = await Shift.findOne({where:{employeeId:employee.id, status:"Active"}})
+        // fetching "Active" shift
+        let shift = await Shift.findOne({where:{employeeId:employee.id, status:"Active"}});
+        // Checking if not "Active" shift exists.
         if(!shift){
             shift = "N/A";
+        }else{
+            
+            const current = new Date();
+            // shift start time + 24hrs
+            const TFhours = new Date(shift.startTime).addHours(24);
+            // checking if the shift has exceeded 24 hrs
+            if(current > TFhours){
+                const startDate = new Date(shift.startTime);
+                const endDate = current;
+                const msec =  Math.abs( endDate - startDate );
+                const totalShiftTime = new Date(msec).toISOString()        
+                const t = `${new Date(totalShiftTime).getUTCHours()}:${new Date(totalShiftTime).getUTCMinutes()}:${new Date(totalShiftTime).getUTCSeconds()}`
+                const time = new Date(totalShiftTime)
+                const shiftWithoutBreak = times.breakTimeCalculator(t, shift.totalBreak);
+                // Updating shift
+                await Shift.update(
+                    {
+                        endTime: TFhours.toISOString(),
+                        endDate:TFhours.toISOString(),
+                        totalShiftLength: totalShiftTime,
+                        shiftWithoutBreak:shiftWithoutBreak,
+                        status:"Completed"},
+                    {where:{id:shift.id}}
+                    );
+                //Updating shiftStatus to "Not Working" 
+                await employee.update({shiftStatus:"Not Working"},{where:{id: shift.employeeId}});
+            }
         }
-        // console.log(employee)
+        // checking if employee exists
         if (employee) {
             const key = process.env.ACCESS_TOKEN_SECRET;
                 const accessToken = jwt.sign({user:employee.email}, key,{
@@ -336,8 +364,6 @@ exports.employeeEndBreak_patch = async(req, res)=>{
           
 
             // Check if the totalBreakTime in DB is not === 00:00:00
-            // console.log(ba.break[positions])
-            // console.log(g)
             if(shift.totalBreak === `00:00:00`){
                 var ba =  await Shift.findOne({where:{id:shift.id}});
                 const positions = ba.break.length -1
@@ -396,45 +422,38 @@ exports.employeeEndBreak_patch = async(req, res)=>{
 exports.employeeEndShift_patch = async(req,res)=>{
     try {
         const date_ob = new Date();
-        // Time
-        const hours = date_ob.getHours();
-        const minutes = date_ob.getMinutes();
-        const seconds = date_ob.getSeconds();
-        const time = hours + ":" + minutes + ":" + seconds
-        // Date
-        const day = ("0" + date_ob.getDate()).slice(-2);
-        const month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
-        const year = date_ob.getFullYear();
-        const date = year + "-" + month + "-" + day;    
+        let position = ""
 
-        // check if the employee with ACTIVE shift Exists
+        // Fetching Employee with ACTIVE shifts
         const employeeWithActiveShift = await Employee.findOne({where:{email:req.user}, include:[{
             model:Shift, 
             where:{status:'Active'}
         }]});
-        // If exists returning error
+
+        // check if the employee with ACTIVE shift Exists
         if(!employeeWithActiveShift){
+            // If exists returning error
             return res.status(400).json({success:false, message:`Employee has no Active shifts`})
         }
         
         // fetching Shift
         const shift = await Shift.findOne({where:{id: employeeWithActiveShift.shifts[0].id}});
-        let position = ""
+        
+        //Checking if break is Null  
         if(shift.break !== null){
             position = shift.break.length -1
         }
+
+        // Calculations utils
         const startDate = new Date(shift.startTime);
         const endDate = date_ob;
         const msec =  Math.abs( endDate - startDate );
-        const totalShiftTime = new Date(msec).toISOString()
-        // console.log(totalShiftTime)
-        // console.log(typeof(totalShiftTime))
+        const totalShiftTime = new Date(msec).toISOString()        
         const t = `${new Date(totalShiftTime).getUTCHours()}:${new Date(totalShiftTime).getUTCMinutes()}:${new Date(totalShiftTime).getUTCSeconds()}`
-        const timez = new Date(totalShiftTime)
-        // const t = Math.abs(new Date(totalShiftTime) - new Date(shift.totalBreak))
+        const time = new Date(totalShiftTime)
         const shiftWithoutBreak = times.breakTimeCalculator(t, shift.totalBreak)
-        // console.log(shiftWithoutBreak)
 
+        // Uploading the EndShiftImage
         const uploadSingle = upload("dsigmas3").single(
             "EndShiftImage"
           );
@@ -455,7 +474,7 @@ exports.employeeEndShift_patch = async(req,res)=>{
                  Shift.update({
                     endTime: date_ob.toISOString(),
                     endDate: date_ob.toISOString(),
-                    totalShiftLength: timez.toUTCString().slice(17,25),
+                    totalShiftLength: time.toUTCString().slice(17,25),
                     shiftWithoutBreak: shiftWithoutBreak,
                     endImage: endImageRoute,
                     status: 'Completed'
@@ -472,25 +491,26 @@ exports.employeeEndShift_patch = async(req,res)=>{
                 return res.status(200).json({success: true, message:`Successfully ended a shift!`, endShiftImage:endImageRoute, endShiftTime: date_ob.toISOString() });
             }else{
                 // Calculate the total time
-                // check if the total time in db is 00:00:00
                 // const endBreak = {"end": date_ob.toISOString()}
                 const totalBreakTime = times.breakTimeCalculator(shift.break[position].start, date_ob.toISOString())
                 // const totalBreakTime = times.breakTimeCalculator(shift.break[position].start, time);
                 const shiftwithoutBreak = times.breakTimeCalculator(totalShiftTime, totalBreakTime)
-    
-            
+                
+                
+                // check if the total time in db is 00:00:00
                 if(shift.totalBreak === `00:00:00`){
+                    
                     // Ending shift
-
                     var brk =  await Shift.findOne({where:{id:shift.id}});
                     const positions = brk.break.length -1
                     brk.break[positions]['end'] = date_ob.toISOString();
-
+                    
+                    //Ending Break 
                     const breakEnd = Shift.update({
                         break:brk.break, 
                         totalBreak: totalBreakTime,
                         endImage: endImageRoute,
-                        totalShiftLength: timez.toUTCString().slice(17,25),
+                        totalShiftLength: time.toUTCString().slice(17,25),
                         shiftWithoutBreak: shiftwithoutBreak,
                         endTime: date_ob.toISOString(),
                         endDate: date_ob.toISOString(),
@@ -512,20 +532,19 @@ exports.employeeEndShift_patch = async(req,res)=>{
                  }else{
      
                      // Adding existing time to the new time 
-                    //  const totalBreak = times.addTimes([shift.totalBreak, totalBreakTime]);
-                    const totalBreak = times.breakTimeCalculator(shift.break[position].start, date_ob.toISOString())
-                    const shiftWithoutBreaks = times.breakTimeCalculator(t, shift.totalBreak)
-                    // const totalBreak = new Date(shift.totalBreak) + new Date(totalBreakTime);
+                    const totalBreak = times.breakTimeCalculator(shift.break[position].start, date_ob.toISOString());
+                    const shiftWithoutBreaks = times.breakTimeCalculator(t, shift.totalBreak);
 
-                     var brek =  await Shift.findOne({where:{id:shift.id}});
+                    var brek =  await Shift.findOne({where:{id:shift.id}});
                     const positions = brek.break.length -1
                     brek.break[positions]['end'] = date_ob.toISOString();
 
+                     //Ending Break 
                      const breakEnd =  Shift.update({
                         break:brek.break, 
                         totalBreak: totalBreak,
                         endImage: endImageRoute,
-                        totalShiftLength: timez.toUTCString().slice(17,25),
+                        totalShiftLength: time.toUTCString().slice(17,25),
                         shiftWithoutBreak: shiftWithoutBreaks,
                         endTime: date_ob.toISOString(),
                         endDate: date_ob.toISOString(),

@@ -38,13 +38,18 @@ const Employee = sequelize.define("employee", {
           msg: 'Please select appropriate option'
         }
       },
-      default:"Not Working",
+      defaultValue:"Not Working",
       allowNull: false,
-    }
+    },
     // isBranchManager:{
     //   type: Sequelize.BOOLEAN,
     //   DefaultValue: false
     // }
+    isAdmin:{
+      type:Sequelize.BOOLEAN,
+      allowNull:false,
+      defaultValue:false
+    }
   });
   
   module.exports = Employee;

@@ -2,7 +2,8 @@ const DsUser = require('../models/dsigma/dsigmaUser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Employee  = require('../models/company/branch/employee/employee');
-const Flag = require('../models/company/branch/employee/flag')
+const Flag = require('../models/company/branch/employee/flag');
+const EmployeeRole = require('../models/company/rolesAndPermissions/employeeRole');
 
 
 // Dsigma User Login
@@ -37,18 +38,26 @@ exports.DsUser_login_post = async(req, res)=>{
 
 // Employee Login
 exports.emp_login_post = async(req,res)=>{
-    console.log(req.body)
+    // console.log(req.body)
     try {
+        // fetching employee
         const employee = await Employee.findOne({
             where:{
                 email: req.body.email
             },
-            include:{
+            include:[{
                 model: Flag,
                 attributes: ['flag']
+            },
+            {
+                model: EmployeeRole,
+
             }
+        ]
         }); 
+        // Checking if the employee fetched has password
         if(employee && employee.password){
+            // If Employee & pass exists verifying pass
             if(employee.password && await bcrypt.compare(req.body.password, employee.password)){
                 const key = process.env.ACCESS_TOKEN_SECRET;
                         const accessToken = jwt.sign({user:employee.email}, key,{
@@ -62,6 +71,7 @@ exports.emp_login_post = async(req,res)=>{
                             // emp: employee
                         });
             }else{
+                // Returning error 
                 res.status(401).json({
                     success: false,
                     message: "Incorrect Credentials"
@@ -69,6 +79,7 @@ exports.emp_login_post = async(req,res)=>{
             }
 
         }else{
+            // Returning error If password or email not found
             return res.status(404).json({
                 success: false,
                 message: "Unregistered User"

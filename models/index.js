@@ -13,6 +13,7 @@ const Role = require('./company/rolesAndPermissions/role');
 const Module = require("./company/module");
 const Permission = require("./company/rolesAndPermissions/permission");
 const EmployeeRole = require("./company/rolesAndPermissions/employeeRole");
+const EmployeeTimeline = require("./company/branch/employee/employeeTimeline");
 // const TryPrem = require("./company/rolesAndPermissions/tryPrem");
 // const Dealer = require('./dealer');
 // const Product = require('./product');
@@ -22,7 +23,6 @@ const EmployeeRole = require("./company/rolesAndPermissions/employeeRole");
 // const Order = require('./order');
 // const Shift = require('./shift');
 // const permission = require('./permission');
-// const ShiftTimeline = require('./shiftTimeline');
 
 // Relationships:
 
@@ -50,6 +50,10 @@ Flag.belongsTo(Employee)
 Employee.hasMany(Shift);
 Shift.belongsTo(Employee);
 
+// Employee & EmployeeTimeline
+Employee.hasMany(EmployeeTimeline);
+EmployeeTimeline.belongsTo(Employee);
+
 // Shift & Timeline
 Shift.hasMany(ShiftTimeline);
 ShiftTimeline.belongsTo(Shift);
@@ -58,79 +62,17 @@ ShiftTimeline.belongsTo(Shift);
 Branch.hasMany(Role);
 Role.belongsTo(Branch);
 
+// Employee & Roles
+// Employee.hasOne(Role);
+
 // Modules & Roles
-// Role.belongsToMany(Module, { through: Permission });
-// Module.belongsToMany(Role, { through: Permission });
+Role.belongsToMany(Module, { through: Permission });
+Module.belongsToMany(Role, { through: Permission });
 
 // Employee & Roles
 Employee.hasOne(EmployeeRole);
 EmployeeRole.belongsTo(Employee);
 Role.hasMany(EmployeeRole)
-
-// // Prem Roles & Modules
-// Role.hasMany(TryPrem);
-// TryPrem.hasMany(Module);
-// TryPrem.belongsTo(Role);
-
-// Role.hasMany(EmployeeRole);
-// Employee.belongsToMany(Role,{through: 'EmployeeRole'});
-// Role.belongsToMany(Employee,{through: 'EmployeeRole'});
-// Role.hasOne(Employee)
-// Employee.hasOne(Role);
-// Role.belongsTo(Employee);
-
-
-// // User & Flags
-// User.hasOne(Flag, {foreignKey: 'user_id'});
-// Flag.belongsTo(User, {foreignKey:'id'});
-
-// // User & Employees
-// User.hasOne(Employee);
-// Employee.belongsTo(User);
-
-// // Dealer & Products
-// Dealer.hasMany(Product);
-// Product.belongsTo(Dealer);
-// Product.hasMany(ProdCart);
-
-// // User & Cart
-// User.hasOne(Cart);
-// Cart.belongsTo(User);
-// // ProdCart.belongsTo(Cart);
-// ProdCart.belongsTo(User);
-
-// // User & Templates
-// User.hasMany(Template);
-// Template.belongsTo(User);
-
-// // User & Order
-// User.hasOne(Order);
-// Order.belongsTo(User);
-
-// // User & Shift
-// User.hasMany(Shift);
-// Shift.belongsTo(User);
-
-// // Role & User
-// User.hasOne(Role);
-// // Role.hasMany(User);
-
-// // Role & Module
-// Role.belongsToMany(Module, { through: permission });
-// Module.belongsToMany(Role, { through: permission });
-
-// // Status & ShiftTimeline
-// Shift.hasMany(ShiftTimeline);
-// ShiftTimeline.belongsTo(Shift);
-
-
-// // User.hasOne(UserRole);
-// // ye nahi kr sakte
-// // UserRole.hasMany(User);
-
-// // Role.hasMany(UserRole);
-// // UserRole.belongsTo(Role)
-
 
 
 //  This will check for the errors in DB connection

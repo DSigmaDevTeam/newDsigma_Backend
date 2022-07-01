@@ -13,11 +13,11 @@ const Role = require('../models/company/rolesAndPermissions/role');
 
 exports.email_post = async(req, res)=>{
   try {
-    const content = output.inviteOutput(req.body.email);
+    // const content = output.inviteOutput(req.body.email.toLowerCase());
     let mailOptions = {
       from: 'dsigmatesting@gmail.com',
       to: req.body.email,
-      subject: `Dashify: New Employee Invitation for ${req.body.email}`,
+      subject: `Dashify: New Employee Invitation for ${req.body.email.toLowerCase()}`,
       html: `<!DOCTYPE html>
       <html lang="en">
       <head>
@@ -39,7 +39,7 @@ exports.email_post = async(req, res)=>{
                   </td>
               </tr>
               <tr>
-                  <th style="font-size:20px; padding: 10px;">Hi ${req.body.email}</th>
+                  <th style="font-size:20px; padding: 10px;">Hi ${req.body.email.toLowerCase()}</th>
               </tr>
               <tr style="text-align: center;">
                   <td style="text-align:center;">You have been invited by <strong>Hardik Pokiya</strong> to join DSigma</td>
@@ -129,7 +129,7 @@ exports.email_post = async(req, res)=>{
       //Generating Employee PIN 
         const pin  = await pinGenerator.userPinGen();
         var email = await Employee.create({
-            email: req.body.email,
+            email: req.body.email.toLowerCase(),
             pin:pin,
             branchId: req.params.branchId,
             roleId: role.id,
@@ -147,10 +147,10 @@ exports.email_post = async(req, res)=>{
         console.log(req.body.email)
 
         // Creating Employee Details Table
-        await EmployeeDetails.create({workEmail: req.body.email, userId: email.id, employeeId: email.id})
+        await EmployeeDetails.create({workEmail: req.body.email.toLowerCase(), userId: email.id, employeeId: email.id})
         return res.status(200).json({
           success: true,
-          message: `Mail has been successfully sent to ${req.body.email}`
+          message: `Mail has been successfully sent to ${req.body.email.toLowerCase()}`
         });
     } catch (error) {
         console.log(`post Employee error: ${error}`);
