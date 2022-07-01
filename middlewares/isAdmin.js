@@ -16,10 +16,10 @@ module.exports = async(req, res, next) => {
                 return res.status(401).json({ message: "You must be logged in" });
             }
             const { user } = payload;
-            console.log(user)
+            // console.log(user)
             const admin = await DsUser.findOne({where:{email:user}});
             const employee = await Employee.findOne({where:{email:user}});
-            console.log(employee.isAdmin)
+            // console.log(employee.isAdmin)
  
             if(admin && admin.isAdmin == true){
                 req.user = admin.email;
