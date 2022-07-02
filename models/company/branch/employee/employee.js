@@ -27,7 +27,7 @@ const Employee = sequelize.define("employee", {
     },
     roleId:{
       type: Sequelize.INTEGER,
-      allowNull: false
+      allowNull: true
     },
 
     shiftStatus:{
