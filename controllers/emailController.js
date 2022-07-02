@@ -126,7 +126,7 @@ exports.email_post = async(req, res)=>{
         if(!role){
           return res.status(500).json({success: false, message: 'Something went wrong during the process'});
         }
-      //Generating Employee PIN 
+    //   Generating Employee PIN 
         const pin  = await pinGenerator.userPinGen();
         var email = await Employee.create({
             email: req.body.email.toLowerCase(),
