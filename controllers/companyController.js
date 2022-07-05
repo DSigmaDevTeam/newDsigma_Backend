@@ -1,6 +1,7 @@
 const Company = require('../models/company/company');
 const DsUser = require('../models/dsigma/dsigmaUser');
 const codeGen = require('../utils/pinGenerator');
+const AdminFlag = require('../models/dsigma/adminFlag');
 
 exports.register_post = async(req,res)=>{
     try {
@@ -26,6 +27,8 @@ exports.register_post = async(req,res)=>{
                  lastName: req.body.lastName,
                  DOB:req.body.DOB,
                 mobileNumber: req.body.mobileNumber},{where:{id:company.dsigmaUserId}});
+
+                await AdminFlag.update({flag:"Company Registered"}, {where:{dsigmaUserId:company.dsigmaUserId}})
            });
            return res.status(200).json({success: true, message:`Company has successfully been registered`});
            

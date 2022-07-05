@@ -31,7 +31,21 @@ exports.DsUser_login_post = async(req, res)=>{
             const accessToken = jwt.sign({user:dsUser.email}, key,{
                 expiresIn: '30d'
             });
-            return res.status(200).json({success: true, user:dsUser.email, JWT_TOKEN: accessToken, DsUser:dsUser });
+            const DsUser = {
+                success: true,
+                user: req.email,
+                JWT_TOKEN: accessToken, 
+                isAdmin: dsUser.isAdmin,
+                companyRegistered: dsUser.companyRegistered,
+                currentBranchId: dsUser.currentBranchId,
+                flag: dsUser.adminFlag.flag 
+            }
+
+
+            return res.status(200).json({success: true, user:dsUser.email, isAdmin: dsUser.isAdmin,
+                companyRegistered: dsUser.companyRegistered,
+                currentBranchId: dsUser.currentBranchId,
+                flag: dsUser.adminFlag.flag,JWT_TOKEN: accessToken  });
         }else{
             return res.status(400).json({success: false, message:`Incorrect Credentials`});
         }
