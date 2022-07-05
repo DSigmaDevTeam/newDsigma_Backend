@@ -131,7 +131,9 @@ exports.email_post = async(req, res)=>{
             pin:pin,
             branchId: req.params.branchId,
             roleId: role.id,
-            shiftStatus: "Not Working"
+            shiftStatus: "Not Working",
+            currentBranchId: req.params.branchId,
+            isAdmin: false
             // isBranchManager: false
         });
 

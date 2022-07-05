@@ -94,6 +94,9 @@ exports.emp_login_post = async(req,res)=>{
                             user: employee.email,
                             flag: employee.flag.flag,
                             JWT_TOKEN: accessToken,
+                            currentBranchId: employee.branchId,
+                            isAdmin: employee.isAdmin,
+                            branchId: employee.branchId
                             // emp: employee
                         });
             }else{
