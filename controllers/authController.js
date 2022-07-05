@@ -33,7 +33,7 @@ exports.DsUser_login_post = async(req, res)=>{
             const accessToken = jwt.sign({user:dsUser.email}, key,{
                 expiresIn: '30d'
             });
-            if(dsUser.adminFlag.flag === "Signed Up"){
+            if(dsUser.adminFlag.flag === "Signed Up" ){
                 return res.status(200).json({success: true, user:dsUser.email, isAdmin: dsUser.isAdmin,
                     companyRegistered: dsUser.companyRegistered,
                     currentBranchId: null,
@@ -50,7 +50,7 @@ exports.DsUser_login_post = async(req, res)=>{
                     flag: dsUser.adminFlag.flag,JWT_TOKEN: accessToken,
                     companyName: dsUser.company.name,
                     companyId: dsUser.company.id,
-                    branchName: branchName.name 
+                    branchName: branchName? branchName.name :null 
                 });
             }
 
