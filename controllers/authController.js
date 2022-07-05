@@ -44,10 +44,13 @@ exports.DsUser_login_post = async(req, res)=>{
                 });    
             }else{
 
-                return res.status(200).json({success: true, user:dsUser.email, isAdmin: dsUser.isAdmin,
+                return res.status(200).json({success: true,
+                    user:dsUser.email, 
+                    isAdmin: dsUser.isAdmin,
                     companyRegistered: dsUser.companyRegistered,
                     currentBranchId: dsUser.currentBranchId,
-                    flag: dsUser.adminFlag.flag,JWT_TOKEN: accessToken,
+                    flag: dsUser.adminFlag.flag,
+                    JWT_TOKEN: accessToken,
                     companyName: dsUser.company.name,
                     companyId: dsUser.company.id,
                     branchName: branchName? branchName.name :null 
