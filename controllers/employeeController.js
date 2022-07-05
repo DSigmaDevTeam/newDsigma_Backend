@@ -3,7 +3,6 @@ const Role = require("../models/company/rolesAndPermissions/role");
 const Flag = require("../models/company/branch/employee/flag");
 const Employee = require("../models/company/branch/employee/employee");
 const nodemailer = require('nodemailer');
-// const {google} = require('googleapis');
 const ou = require('../utils/output');
 const bcrypt = require('bcrypt');
 const {transporter} = require("../utils/transporter");
@@ -77,15 +76,12 @@ exports.form_post = async(req,res)=>{
       
   //  Uploading files to aws s3 
       uploadsBusinessGallery( req, res, async ( error ) => {
-        // console.log( 'files', req.files );
         if( error ){
           console.log( 'errors', error );
-          // res.json( { error: error } );
         } else {
           // If File not found
           if( req.files === undefined ){
             console.log( 'Error: No File Selected!' );
-            // res.json( 'Error: No File Selected' );
           } else {
             // If Success
      
@@ -94,7 +90,6 @@ exports.form_post = async(req,res)=>{
             var galleryImgLocationArray = [];
             for ( let i = 0; i < fileArray.length; i++ ) {
               fileLocation = fileArray[ i ].location;
-              // console.log( 'fileName', fileLocation );
               galleryImgLocationArray.push( fileLocation )
             }
 
@@ -149,9 +144,6 @@ exports.form_post = async(req,res)=>{
               file2: galleryImgLocationArray[1],
               file3: galleryImgLocationArray[2],
             },{where:{userId: user.id}});
-      
-            // const emp = await Employee.update(req.body, {where:{userId: user.id}});  
-      
       
       // Updating Flag
             await Flag.update({flag: 'Onboarding'}, {where:{user_id: user.id}});

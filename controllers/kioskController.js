@@ -212,8 +212,8 @@ exports.employeeStartShift_post = async(req,res)=>{
         if(shift){
             return res.status(400).json({success:false, message:`Employee already has an Active shift`})
         }
+        
         // Uploading StartShift Image to AWS
-        // replace StartShiftImage with frontend se jo b image attribute ka naam hai
         const uploadSingle = upload("dsigmas3").single(
     "StartShiftImage"
   );

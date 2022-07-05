@@ -14,6 +14,7 @@ const Module = require("./company/module");
 const Permission = require("./company/rolesAndPermissions/permission");
 const EmployeeRole = require("./company/rolesAndPermissions/employeeRole");
 const EmployeeTimeline = require("./company/branch/employee/employeeTimeline");
+const AdminFlag = require("./dsigma/adminFlag");
 // const TryPrem = require("./company/rolesAndPermissions/tryPrem");
 // const Dealer = require('./dealer');
 // const Product = require('./product');
@@ -26,9 +27,13 @@ const EmployeeTimeline = require("./company/branch/employee/employeeTimeline");
 
 // Relationships:
 
-// DsigmaUser & company
+// DSigmaUser & company
 DsigmaUser.hasOne(Company);
 Company.belongsTo(DsigmaUser);
+
+// DSigmaUser & AdminFlag
+DsigmaUser.hasOne(AdminFlag);
+AdminFlag.belongsTo(DsigmaUser);
 
 // Company & Branch
 Company.hasMany(Branch);
@@ -72,7 +77,7 @@ Module.belongsToMany(Role, { through: Permission });
 // Employee & Roles
 Employee.hasOne(EmployeeRole);
 EmployeeRole.belongsTo(Employee);
-Role.hasMany(EmployeeRole)
+Role.hasMany(EmployeeRole);
 
 
 //  This will check for the errors in DB connection

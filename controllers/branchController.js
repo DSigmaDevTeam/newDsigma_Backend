@@ -3,15 +3,15 @@ const Company = require('../models/company/company');
 const Role = require('../models/company/rolesAndPermissions/role');
 const Permission = require('../models/company/rolesAndPermissions/permission');
 const pinGenerator = require('../utils/pinGenerator')
-
+const DSuser = require('../models/dsigma/dsigmaUser');
 
 exports.register_post = async(req,res)=>{
     try {   
-            // console.log(pinGenerator.branchPinGen());
             const code = await pinGenerator.branchPinGen();
             const company = await Company.findOne({where:{id:req.params.companyId}});
             do {
-                const bh = await pinGenerator.branchCodeGen(req.body.name)
+                const bh = await pinGenerator.branchCodeGen(req.body.name);
+                console.log(bh);
                 var kioskId = `${company.code}-${bh}`
                 var kioskIdCheck = await Branch.findOne({where:{kioskId:kioskId}})
                 
@@ -29,6 +29,8 @@ exports.register_post = async(req,res)=>{
                 description: "Basic Access",
                 branchId: branch.id
             });
+            console.log(req.user)
+            const DsUser = await DSuser.update({currentBranchId: branch.id},{where:{email:req.user}});
 
             return res.status(200).json({success: true, message: `${branch.name} has been successfully created`});
 

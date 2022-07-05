@@ -2,31 +2,36 @@ const DsUser = require('../models/dsigma/dsigmaUser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Employee  = require('../models/company/branch/employee/employee');
+const Branch  = require('../models/company/branch/branch');
+const Company  = require('../models/company/company');
 const Flag = require('../models/company/branch/employee/flag');
 const EmployeeRole = require('../models/company/rolesAndPermissions/employeeRole');
+const AdminFlag = require('../models/dsigma/adminFlag')
 
 
-// Dsigma User Login
+// DSigma User Login
 exports.DsUser_login_post = async(req, res)=>{
     try {
         if(req.body.email && req.body.password){
             var dsUser = await DsUser.findOne({
                 where:{
                     email:req.body.email
-                }
+                },
+                include:[{
+                    model:Company,include:[{model:Branch}]
+                }, {model:AdminFlag}]
             });
         }else{
             return res.status(400).json({
                 success: false, message:`empty input`
             });
         }
-        // console.log(`${req.body.password}, ${dsUser.password}`)
         if(dsUser && await bcrypt.compare(req.body.password, dsUser.password)){
             const key = process.env.ACCESS_TOKEN_SECRET;
             const accessToken = jwt.sign({user:dsUser.email}, key,{
                 expiresIn: '30d'
             });
-            return res.status(200).json({success: true, user:dsUser.email, JWT_TOKEN: accessToken});
+            return res.status(200).json({success: true, user:dsUser.email, JWT_TOKEN: accessToken, DsUser:dsUser });
         }else{
             return res.status(400).json({success: false, message:`Incorrect Credentials`});
         }
@@ -38,7 +43,6 @@ exports.DsUser_login_post = async(req, res)=>{
 
 // Employee Login
 exports.emp_login_post = async(req,res)=>{
-    // console.log(req.body)
     try {
         // fetching employee
         const employee = await Employee.findOne({
@@ -83,7 +87,7 @@ exports.emp_login_post = async(req,res)=>{
             return res.status(404).json({
                 success: false,
                 message: "Unregistered User"
-            })
+            });
         }
     } catch (error) {
         console.log(error);

@@ -22,7 +22,32 @@ const DsigmaUser = sequelize.define("dsigmaUser", {
     isAdmin: {
       type: Sequelize.BOOLEAN,
       defaultValue: false
-    } 
+    },
+    companyRegistered:{
+      type: Sequelize.BOOLEAN,
+      defaultValue: false,
+      allowNull: false
+    },
+    firstName:{
+      type: Sequelize.STRING,
+      allowNull: true
+    },
+    lastName:{
+      type: Sequelize.STRING,
+      allowNull: true
+    },
+    currentBranchId:{
+      type: Sequelize.INTEGER,
+      allowNull: true
+    },
+    mobileNumber:{
+      type: Sequelize.STRING,
+      allowNull: true
+    },
+    DOB:{
+      type: Sequelize.DATE
+    }
+
   });
   
   module.exports = DsigmaUser;

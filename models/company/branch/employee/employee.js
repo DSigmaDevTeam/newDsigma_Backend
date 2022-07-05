@@ -49,6 +49,10 @@ const Employee = sequelize.define("employee", {
       type:Sequelize.BOOLEAN,
       allowNull:false,
       defaultValue:false
+    },
+    currentBranchId:{
+      type: Sequelize.INTEGER,
+      allowNull:false
     }
   });
   

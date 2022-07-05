@@ -1,5 +1,4 @@
 const nodemailer = require('nodemailer');
-// const {google} = require('googleapis');
 const Employee = require("../models/company/branch/employee/employee");
 const Flag = require("../models/company/branch/employee/flag");
 const output = require('../utils/output');
@@ -13,18 +12,17 @@ const Role = require('../models/company/rolesAndPermissions/role');
 
 exports.email_post = async(req, res)=>{
   try {
-    // const content = output.inviteOutput(req.body.email.toLowerCase());
     let mailOptions = {
       from: 'dsigmatesting@gmail.com',
       to: req.body.email,
-      subject: `Dashify: New Employee Invitation for ${req.body.email.toLowerCase()}`,
+      subject: `DSigma: New Employee Invitation for ${req.body.email.toLowerCase()}`,
       html: `<!DOCTYPE html>
       <html lang="en">
       <head>
           <meta charset="UTF-8">
           <meta http-equiv="X-UA-Compatible" content="IE=edge">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Dsigma Email</title>
+          <title>DSigma Email</title>
       </head>
       <body style="background-color: rgb(201, 201, 201);">
           <header>
@@ -35,7 +33,7 @@ exports.email_post = async(req, res)=>{
           <tbody>
               <tr>
                   <td id="logo" style="display:block; text-align: center;">
-                      <img src="https://i.im.ge/2022/06/19/re2zMa.png" alt="Crinitis logo" width="150px">
+                      <img src="https://i.im.ge/2022/06/19/re2zMa.png" alt="DSigma logo" width="150px">
                   </td>
               </tr>
               <tr>
@@ -76,13 +74,13 @@ exports.email_post = async(req, res)=>{
                   <td style="text-align:center; padding: 10px">Please click the <u>"Sign Up"</u>. tab to create your account once you click the register link provided.</td>
               </tr>
               <tr>
-                  <td style="text-align:center; padding: 10px">Having troubles creating an account or signing in, please contact the Dashify<br>team by email, <u>support@dashify.com.au</u>, our team will gladly assit you.</td>
+                  <td style="text-align:center; padding: 10px">Having troubles creating an account or signing in, please contact the DSigma<br>team by email, <u>support@dsigma.com.au</u>, our team will gladly assit you.</td>
               </tr>
               <tr>
                   <td style="text-align:center; padding: 15px"><img src="https://dsigma.net/assets/images/dsigma-logo.png" alt="Dsigma logo" width="100px"></td>
               </tr>
               <tr>
-                  <td style="text-align:center;"><strong>DSigma PYT Ltd.</strong></td>
+                  <td style="text-align:center;"><strong>DSigma LLP.</strong></td>
               </tr>
               <tr>
                   <td style="text-align:center;">Restaurant & Business Management Software</td>
