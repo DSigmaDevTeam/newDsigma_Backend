@@ -26,6 +26,7 @@ exports.register_post = async(req,res)=>{
                  firstName:req.body.firstName,
                  lastName: req.body.lastName,
                  DOB:req.body.DOB,
+                 gender: req.body.gender,
                 mobileNumber: req.body.mobileNumber},{where:{id:company.dsigmaUserId}});
 
                 await AdminFlag.update({flag:"Company Registered"}, {where:{dsigmaUserId:company.dsigmaUserId}})

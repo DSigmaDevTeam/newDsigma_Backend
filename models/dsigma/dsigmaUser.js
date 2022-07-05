@@ -46,6 +46,16 @@ const DsigmaUser = sequelize.define("dsigmaUser", {
     },
     DOB:{
       type: Sequelize.DATE
+    },
+    gender:{
+      type: Sequelize.STRING,
+      validate:{
+        isIn:{
+          args:[['Male', 'Female', 'Not Stated']],
+          msg: 'Please select appropriate option'
+        }
+      },
+      default: "N/A"
     }
 
   });
