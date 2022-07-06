@@ -66,7 +66,7 @@ exports.register_post = async (req, res) => {
             const DsUser = await DSuser.update({ currentBranchId: branch.id }, { where: { email: req.user } });
 
             const key = process.env.ACCESS_TOKEN_SECRET;
-            const accessToken = jwt.sign({user:DsUser.email}, key,{
+            const accessToken = jwt.sign({user:dsUser.email}, key,{
                 expiresIn: '30d'
             });
 
