@@ -6,8 +6,10 @@ const pinGenerator = require('../utils/pinGenerator');
 const DSuser = require('../models/dsigma/dsigmaUser');
 const AdminFlag = require('../models/dsigma/adminFlag');
 const jwt = require('jsonwebtoken');
+const Employee = require('../models/company/branch/employee/employee');
 
 
+// Registering Branch
 exports.register_post = async (req, res) => {
     try {
         console.log(req.body);
@@ -27,7 +29,7 @@ exports.register_post = async (req, res) => {
                 var kioskIdCheck = await Branch.findOne({ where: { kioskId: kioskId } })
 
             } while (kioskIdCheck !== null);
-
+                
             const branch = await Branch.create({
                 name: req.body.name,
                 // description: req.body.description,
@@ -96,6 +98,7 @@ exports.register_post = async (req, res) => {
     }
 }
 
+// Fetching all branches
 exports.branches_get = async (req, res) => {
     try {
         DSuser.findOne({ where: { email: req.user }, include: [{ model: Company }] }).then((DSuser) => {
@@ -112,6 +115,28 @@ exports.branches_get = async (req, res) => {
     }
 }
 
+// Switching Branch
 exports.switchBranch_post = async (req, res) => {
 
 } 
+
+// Fetching Single Branch
+exports.branch_get = async(req, res)=>{
+    try {
+        const DsUser = await DSuser.findOne({where:{email:req.user}});
+        const employee = await Employee.findOne({where:{email:req.user}});
+        if(DsUser){
+            const branch = await Branch.findOne({where:{id:DsUser.currentBranchId}});
+            return res.status(200).json({success:true, branch:branch});
+        }else if(employee){
+            const branch = await Branch.findOne({where:{id:employee.currentBranchId}});
+            return res.status(200).json({success:true, branch:branch}); 
+        }else{
+            return res.status(400).json({success:false, message:"Bad Method Call"});
+        }
+        
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({success:false, message:"something went wrong, Please try again later"});
+    }
+}

@@ -53,7 +53,8 @@ exports.DsUser_login_post = async(req, res)=>{
                     JWT_TOKEN: accessToken,
                     companyName: dsUser.company.name,
                     companyId: dsUser.company.id,
-                    branchName: branchName? branchName.name :null 
+                    branchName: branchName? branchName.name :null,
+                    branchLogo: branchName? branchName.logo : null 
                 });
             }
 
@@ -83,7 +84,13 @@ exports.emp_login_post = async(req,res)=>{
 
             }
         ]
-        }); 
+        });
+        
+        // Fetching associated branch
+        const branch = await Branch.findOne({where:{
+            id: employee.currentBranchId
+        }});
+
         // Checking if the employee fetched has password
         if(employee && employee.password){
             // If Employee & pass exists verifying pass
@@ -97,11 +104,12 @@ exports.emp_login_post = async(req,res)=>{
                             user: employee.email,
                             flag: employee.flag.flag,
                             JWT_TOKEN: accessToken,
-                            currentBranchId: employee.branchId,
+                            currentBranchId: employee.currentBranchId,
                             isAdmin: employee.isAdmin,
                             branchId: employee.branchId,
-                            employeeId: employee.id
-                            // emp: employee
+                            employeeId: employee.id,
+                            branchName: branch.name,
+                            branchLogo: branch.logo
                         });
             }else{
                 // Returning error 

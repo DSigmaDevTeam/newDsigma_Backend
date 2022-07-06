@@ -18,6 +18,7 @@ const s3 = new aws.S3({
 
 
   function checkFileType(file, cb) {
+    console.log(file);
     const filetypes = /jpg|png|jpeg/;
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = filetypes.test(file.mimetype);
@@ -55,5 +56,6 @@ router.post('/:companyId/registerbranch',isAdmin,upload.fields([
     }
   ]), branchController.register_post);
 router.get('/branches', isAdmin, branchController.branches_get);
+router.get('/branch', isAdmin, branchController.branch_get);
 
 module.exports = router;
