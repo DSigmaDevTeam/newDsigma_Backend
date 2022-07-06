@@ -7,6 +7,7 @@ const DSuser = require('../models/dsigma/dsigmaUser');
 const AdminFlag = require('../models/dsigma/adminFlag');
 const jwt = require('jsonwebtoken');
 const Employee = require('../models/company/branch/employee/employee');
+const Flag = require('../models/company/branch/employee/flag');
 
 
 // Registering Branch
@@ -116,8 +117,73 @@ exports.branches_get = async (req, res) => {
 }
 
 // Switching Branch
-exports.switchBranch_post = async (req, res) => {
+exports.switchBranch_get = async (req, res) => {
+    try {
+        
+        // check if the switched branch id Exists
+        const branch = await Branch.findOne({where:{id:req.params.branchId}});
+        if(branch){
+            const company = await Company.findOne({where:{id: branch.companyId}});
+            const dsUser = await DSuser.findOne({where:{email:req.user}});
+            const employee = await Employee.findOne({where:{email:req.user}});
+            
+            // check if the user is a DSigma user or an employee
+            if(dsUser){
+                // update the branch id to the employee or dsUser
+                await DSuser.update({currentBranchId: branch.id},{where:{id:dsUser.id}});
+                const key = process.env.ACCESS_TOKEN_SECRET;
+                    const accessToken = jwt.sign({user:dsUser.email}, key,{
+                        expiresIn: '30d'
+                    });
+                    const user = await DSuser.findOne({where:{id:dsUser.id}, include:[{model:AdminFlag}]});
+                    // const company = await Company.findOne({where:{companyId: branch.companyId}});
 
+                    return res.status(200).json({success: false, 
+                        message:`Switched to ${branch.name}`,
+                        user:user.email, 
+                        isAdmin: user.isAdmin,
+                        companyRegistered: user.companyRegistered,
+                        currentBranchId: user.currentBranchId,
+                        JWT_TOKEN: accessToken,
+                        flag: user.adminFlag.flag,
+                        companyName: company.name,
+                        companyId: company.id,
+                        branchName: branch.name,
+                        branchLogo: branch.logo
+                    })
+            }else if(employee){
+                // update the branch id to the employee
+                await Employee.update({currentBranchId:branch.id},{where:{user}});
+                const key = process.env.ACCESS_TOKEN_SECRET;
+                    const accessToken = jwt.sign({user:employee.email}, key,{
+                        expiresIn: '30d'
+                    });
+                    const user = await Employee.findOne({where:{id:employee.id}, include:[{model:Flag}]});
+                    
+                    return res.status(200).json({success: false, 
+                        message:`Switched to ${branch.name}`,
+                        user:user.email, 
+                        isAdmin: user.isAdmin,
+                        companyRegistered: user.companyRegistered,
+                        currentBranchId: user.currentBranchId,
+                        JWT_TOKEN: accessToken,
+                        flag: user.adminFlag.flag,
+                        companyName: company.name,
+                        companyId: company.id,
+                        branchName: branch.name,
+                        branchLogo: branch.logo
+                    })
+            }else{
+                return res.status(400).json({success:false, message:"Bad Method Call"});
+            }
+    
+        }else{
+            return res.status(404).json({success:false, message:"Invalid branch ID"})
+        }
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({success:false, message:"Something went wrong, Please try again later"})
+    }
 } 
 
 // Fetching Single Branch

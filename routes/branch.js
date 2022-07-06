@@ -57,5 +57,6 @@ router.post('/:companyId/registerbranch',isAdmin,upload.fields([
   ]), branchController.register_post);
 router.get('/branches', isAdmin, branchController.branches_get);
 router.get('/branch', isAdmin, branchController.branch_get);
+router.get('/branch/switch/:branchId', isAdmin, branchController.switchBranch_get);
 
 module.exports = router;
