@@ -139,7 +139,7 @@ exports.switchBranch_get = async (req, res) => {
                     // const company = await Company.findOne({where:{companyId: branch.companyId}});
 
                     return res.status(200).json({success: false, 
-                        message:`Switched to ${branch.name}`,
+                        message:`Successfully switched to ${branch.name}`,
                         user:user.email, 
                         isAdmin: user.isAdmin,
                         companyRegistered: user.companyRegistered,
@@ -161,7 +161,7 @@ exports.switchBranch_get = async (req, res) => {
                     const user = await Employee.findOne({where:{id:employee.id}, include:[{model:Flag}]});
                     
                     return res.status(200).json({success: false, 
-                        message:`Switched to ${branch.name}`,
+                        message:`Successfully switched to ${branch.name}`,
                         user:user.email, 
                         isAdmin: user.isAdmin,
                         companyRegistered: user.companyRegistered,
