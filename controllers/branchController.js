@@ -30,7 +30,7 @@ exports.register_post = async (req, res) => {
 
             const branch = await Branch.create({
                 name: req.body.name,
-                description: req.body.description,
+                // description: req.body.description,
                 companyId: req.params.companyId,
                 code: code,
                 kioskId: kioskId,
@@ -68,6 +68,8 @@ exports.register_post = async (req, res) => {
                 expiresIn: '30d'
             });
 
+            console.log("Ye File Hai",req.files.branchLogo[0])
+
             return res.status(200).json({ 
                  success: true,
                  message: `${branch.name} has been successfully created`,
@@ -79,7 +81,8 @@ exports.register_post = async (req, res) => {
                     flag: dsUser.adminFlag.flag,
                     companyName: company.name,
                     companyId: company.id,
-                    branchName: branch.name
+                    branchName: branch.name,
+                    branchLogo: req.files.branchLogo[0].location
                 });
 
 
