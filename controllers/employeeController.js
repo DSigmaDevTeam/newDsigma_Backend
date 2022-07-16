@@ -298,7 +298,7 @@ exports.employees_get = async(req,res)=>{
   try {
     // 
     // Fetching all employees
-  const employees = await Employee.findAll({where:{banchId: req.currentBranchId},
+  const employees = await Employee.findAll({where:{branchId: req.currentBranchId},
     order:[['createdAt', 'DESC']],
     attributes: ['email','createdAt', 'id'],
     include: [
