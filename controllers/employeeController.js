@@ -404,8 +404,9 @@ exports.employee_get = async(req,res)=>{
   try {
     
     let result = {};
-    const dsUser = await DSuser.findOne({where:{email:req.email}}); 
-    const emp = await Employee.findOne({where:{email:req.email}})
+    console.log(req.user);
+    const dsUser = await DSuser.findOne({where:{email:req.user}}); 
+    const emp = await Employee.findOne({where:{email:req.user}})
 // fetching employee 
     const employee = await Employee.findOne({where:{id:req.params.empId}, 
     attributes: ['id', 'pin'],
