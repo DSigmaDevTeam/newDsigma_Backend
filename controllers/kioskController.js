@@ -167,26 +167,25 @@ exports.employeeLogin_post = async(req, res) => {
 }
 
 
-
 const s3 = new aws.S3({
-  accessKeyId: process.env.S3_ACCESS_KEY,
-  secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
-  region: process.env.S3_BUCKET_REGION,
+    accessKeyId: process.env.S3_ACCESS_KEY,
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+    region: process.env.S3_BUCKET_REGION,
 });
 
 const upload = (bucketName) =>
-  multer({
+multer({
     storage: multerS3({
-      s3,
+        s3,
       bucket: bucketName,
       metadata: function (req, file, cb) {
-        cb(null, { fieldName: file.fieldname });
-      },
-      key: function (req, file, cb) {
-        cb(null, `image-${Date.now()}.jpeg`);
-      },
+          cb(null, { fieldName: file.fieldname });
+        },
+        key: function (req, file, cb) {
+            cb(null, `image-${Date.now()}.jpeg`);
+        },
     }),
-  });
+});
 
 
 // StartShift
@@ -205,6 +204,7 @@ exports.employeeStartShift_post = async(req,res)=>{
     let imageRoute = ""
 
     try {
+        // fetching the employee to who wants to start the image
         const shift = await Employee.findOne({where:{email:req.user}, include:[{
             model:Shift, 
             where:{status:'Active'}
@@ -223,7 +223,6 @@ exports.employeeStartShift_post = async(req,res)=>{
                 console.log(err)
                 return res.status(400).json({success:false, message: `Error while uploading the Image to aws ERROR:${err.message}`});
             }
-            console.log(req.file)
             if(req.file) {
 
                 const employee = Employee.findOne({where:{email:req.user}})

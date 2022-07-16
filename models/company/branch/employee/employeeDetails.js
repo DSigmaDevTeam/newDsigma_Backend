@@ -37,7 +37,7 @@ const EmployeeDetails = sequelize.define("employeeDetails", {
       type: Sequelize.STRING,
       allowNull: false,
       isEmail: true,
-      unique: true
+      unique: false
     },
     personalEmail:{
       type: Sequelize.STRING,

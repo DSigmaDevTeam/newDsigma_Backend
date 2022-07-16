@@ -21,7 +21,9 @@ exports.DsUser_login_post = async(req, res)=>{
                     model:Company,include:[{model:Branch}]
                 }, {model:AdminFlag}]
             });
-
+            if(!dsUser){
+                return res.status(400).json({success:false, message:"Incorrect Credentials"});
+            }
             var branchName = await Branch.findOne({where:{id:dsUser.currentBranchId}}) 
         }else{
             return res.status(400).json({
@@ -91,6 +93,11 @@ exports.emp_login_post = async(req,res)=>{
             id: employee.currentBranchId
         }});
 
+        // Fetching associated Company
+        const company = await Company.findOne({where:{
+            id: branch.companyId
+        }})
+
         // Checking if the employee fetched has password
         if(employee && employee.password){
             // If Employee & pass exists verifying pass
@@ -109,7 +116,8 @@ exports.emp_login_post = async(req,res)=>{
                             branchId: employee.branchId,
                             employeeId: employee.id,
                             branchName: branch.name,
-                            branchLogo: branch.logo
+                            branchLogo: branch.logo,
+                            companyName: company.name
                         });
             }else{
                 // Returning error 

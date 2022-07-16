@@ -14,11 +14,15 @@ const ShiftTimeline = sequelize.define("shiftTimeline", {
       },
       shiftId:{
         type: Sequelize.INTEGER,
-        allowNull: false
+        allowNull: true
       },
       message:{
         type: Sequelize.STRING,
         allowNull: false
+      },
+      dsUserId:{
+        type: Sequelize.INTEGER,
+        allowNull: true
       }
       
     });

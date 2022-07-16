@@ -23,9 +23,13 @@ module.exports = async(req, res, next) => {
  
             if(admin && admin.isAdmin == true){
                 req.user = admin.email;
+                req.currentBranchId = admin.currentBranchId;
+                req.userType = "DSuser";
                 next();
             }else if(employee && employee.isAdmin == true){
                 req.user = employee.email;
+                req.currentBranchId = employee.currentBranchId;
+                req.userType = "Employee";
                 next();
             }else{
                 console.log(`from isAdmin Middleware ${admin}`);

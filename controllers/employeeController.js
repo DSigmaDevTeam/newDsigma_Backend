@@ -293,11 +293,12 @@ exports.form_post = async(req,res)=>{
 }
 
 
-// All Employees (Tested)
+// All Employees (NOT Tested)
 exports.employees_get = async(req,res)=>{
   try {
+    // 
     // Fetching all employees
-  const employees = await Employee.findAll({where:{},
+  const employees = await Employee.findAll({where:{banchId: req.currentBranchId},
     order:[['createdAt', 'DESC']],
     attributes: ['email','createdAt', 'id'],
     include: [
@@ -352,13 +353,16 @@ exports.employee_patch = async(req,res)=>{
 // Deleting Employee (Tested)
 exports.employee_delete = async(req,res)=>{
   try {
-    const emp = await Employee.destroy({where: {id: req.params.empId},truncate:true});
-    const employee = await EmployeeDetails.destroy({where: {employeeId: req.params.empId},truncate:true});
+    // Destroying Employee
+    const employee = await Employee.destroy({where: {id: req.params.empId},truncate:true});
+    // Destroying Employee Details
+    const employeeDetails = await EmployeeDetails.destroy({where: {employeeId: req.params.empId},truncate:true});
+    // Destroying employee Flag
     const U = await Flag.destroy({where: {employeeId: req.params.empId}, truncate:true});
     return res.json({
-      d: emp,
+      d: employee,
       flag: U
-    })
+    });
   } catch (error) {
     console.log(error)
     return res.status(500).json({
@@ -373,7 +377,7 @@ exports.employee_delete = async(req,res)=>{
 exports.employee_get = async(req,res)=>{
   try {
     let result = {};
-// fetching from DB
+// fetching employee 
     const employee = await Employee.findOne({where:{id:req.params.empId}, 
     attributes: ['id', 'pin'],
     include: [
@@ -381,7 +385,7 @@ exports.employee_get = async(req,res)=>{
              {model:Flag, attributes:['flag']},
 
        ]});
-       console.log(employee.employeeDetail)
+      //  console.log(employee.employeeDetail)
 // Rearranging
        result['user_id'] = employee.id;
        result['flag'] = employee.flag.flag;
@@ -410,7 +414,7 @@ exports.activateEmployee_patch = async (req, res)=>{
     // Fetching flag & employee
     const check = await Flag.findOne({where:{employeeId: req.params.empId}, include:[{model: Employee}]});
 
-    if(check && check.flag === 'Onboarding'){
+    if(check && check.flag === 'Onboarding' || check.flag === 'Active'){
       // Fetching Mail Content
       const content = ou.activationOutput(check.employee.pin, check.employee.email);
 
@@ -446,6 +450,7 @@ exports.register_post = async(req,res)=>{
         if(req.body.password){
           // hashing password
             const hashedPassword = await bcrypt.hash(req.body.password, 10);
+            // fetching employee
             const employee = await Employee.findOne({
               where:{
                 email: req.body.email
@@ -457,8 +462,8 @@ exports.register_post = async(req,res)=>{
             });
             // checking if the employee email exists
             if(employee){
-              // console.log(employee.password)
               if(!employee.password){
+                // updating user and its flag & branch
                 const user = await Employee.update({password: hashedPassword}, {where:{email: req.body.email}});
                 const flag = await Flag.update({flag: 'Registered'}, {where:{employeeId: employee.id}});
                 const branchRoles = await Role.findOne({where:{role:"Basic", branchId: employee.branchId}});

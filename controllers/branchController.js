@@ -13,7 +13,7 @@ const Flag = require('../models/company/branch/employee/flag');
 // Registering Branch
 exports.register_post = async (req, res) => {
     try {
-        console.log(req.body);
+        // console.log(req.body);
         // fetching the company
         const company = await Company.findOne({ where: { id: req.params.companyId } });
         const dsUser = await DSuser.findOne({ where: { email: req.user}, include:[{model:AdminFlag}]})
@@ -22,9 +22,10 @@ exports.register_post = async (req, res) => {
         if (req.body.name && company) {
 
             const code = await pinGenerator.branchPinGen();
-
+            const branchName =  pinGenerator.removeNonAlphabet(req.body.name);
+                console.log("PREPROCESSED BRANCH NAME", branchName)
             do {
-                const bh = await pinGenerator.branchCodeGen(req.body.name);
+                const bh = await pinGenerator.branchCodeGen(branchName);
                 console.log("Ye BH hai", bh);
                 var kioskId = `${company.code}-${bh}`
                 var kioskIdCheck = await Branch.findOne({ where: { kioskId: kioskId } })
@@ -71,7 +72,7 @@ exports.register_post = async (req, res) => {
                 expiresIn: '30d'
             });
 
-            console.log("Ye File Hai",req.files.branchLogo[0])
+            // console.log("Ye File Hai",req.files.branchLogo[0])
 
             return res.status(200).json({ 
                  success: true,
@@ -79,7 +80,7 @@ exports.register_post = async (req, res) => {
                  user:dsUser.email, 
                     isAdmin: dsUser.isAdmin,
                     companyRegistered: dsUser.companyRegistered,
-                    currentBranchId: dsUser.currentBranchId,
+                    currentBranchId: branch.id,
                     JWT_TOKEN: accessToken,
                     flag: dsUser.adminFlag.flag,
                     companyName: company.name,

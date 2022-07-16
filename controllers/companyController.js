@@ -6,7 +6,9 @@ const AdminFlag = require('../models/dsigma/adminFlag');
 // Company Register
 exports.register_post = async(req,res)=>{
     try {
-        const code = await codeGen.companyCodeGen(req.body.name);
+        const name = codeGen.removeNonAlphabet(req.body.name);
+        console.log("PRE processed name ",name)
+        const code = await codeGen.companyCodeGen(name);
         const dsUser = await DsUser.findOne({where:{
             email: req.user
         }});

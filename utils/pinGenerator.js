@@ -3,6 +3,9 @@ const Branch = require('../models/company/branch/branch');
 const Company = require('../models/company/company');
 const bcrypt = require('bcrypt');
 
+module.exports.removeNonAlphabet = function removeNonAlphabet(str) {
+      return str.replace(/[^a-zA-Z]/g, '');
+    }
 module.exports.userPinGen = async function userPinGen(){
     do {
         var pin = Math.floor(Math.random()*90000) + 10000;
