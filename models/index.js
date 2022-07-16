@@ -94,7 +94,7 @@ Role.hasMany(EmployeeRole);
  db.sequelize = sequelize;
 
 
-db.sequelize.sync({force: false})
+db.sequelize.sync({force: true})
 .then(()=>{
    console.log("successfully Synced all the models");
 })
