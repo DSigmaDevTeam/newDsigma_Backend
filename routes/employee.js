@@ -11,9 +11,9 @@ router.patch('/employee/detailsform',loginRequired,employeeController.form_post)
 // All Employees
 router.get('/employees', isAdmin,employeeController.employees_get);
 // Update Employee
-router.patch('/employee/update/:empId', loginRequired,employeeController.employee_patch);
+router.patch('/employee/update/:empId', loginRequired, isAdmin,employeeController.employee_patch);
 // Get Employee
-router.get('/employee/:empId', isAdmin,employeeController.employee_get);
+router.get('/employee/:empId', loginRequired,employeeController.employee_get);
 // Delete Employee
 router.delete('/employee/:empId', isAdmin,employeeController.employee_delete);
 // Activate Employee

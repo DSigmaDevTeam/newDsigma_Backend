@@ -17,15 +17,17 @@ module.exports = (req, res, next) => {
             if (err) {
                 return res.status(401).json({ message: "You must be logged in" })
             }
-            const { user } = payload
+            const { user } = payload;
+            req.user = user;
+            next()
             // console.log(user)
-            Employee.findOne({where:{email:user}}).then(userData => {
-                req.user = userData.email
-                next()
-            }).catch((err) => {
-                console.log(err)
-                return res.status(404).json({success: false, message: `loginRequired, Inappropriate JWT`});
-            })
+            // Employee.findOne({where:{email:user}}).then(userData => {
+            //     req.user = userData.email
+            //     next()
+            // }).catch((err) => {
+            //     console.log(err)
+            //     return res.status(404).json({success: false, message: `loginRequired, Inappropriate JWT`});
+            // })
         })
         
     } catch (error) {

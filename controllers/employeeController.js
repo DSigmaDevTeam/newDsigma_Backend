@@ -11,6 +11,8 @@ const aws = require( 'aws-sdk' );
 const multerS3 = require( 'multer-s3-v2' );
 const multer = require('multer');
 const path = require( 'path' );
+const DSuser = require( '../models/dsigma/dsigmaUser');
+const AdminFlag = require('../models/dsigma/adminFlag');
 
 
 
@@ -293,7 +295,7 @@ exports.form_post = async(req,res)=>{
 }
 
 
-// All Employees (NOT Tested)
+// All Employees (Tested)
 exports.employees_get = async(req,res)=>{
   try {
     // 
@@ -325,21 +327,45 @@ exports.employees_get = async(req,res)=>{
 // Updating Employee (Tested)
 exports.employee_patch = async(req,res)=>{
   try {
-    // Checking if flag exists
-      if(req.body.flag){
-         await EmployeeDetails.update(req.body,{where:{employeeId: req.params.empId}});
-         await Flag.update({flag:req.body.flag}, {where:{employeeId:req.params.empId}});
-         return res.status(201).json({
-           success: true,
-           message: "Details updated successfully"
-         });
-      }
+    const dsUser = await DSuser.findOne({where:{email:req.user}});
+    const emp = await Employee.findOne({where:{email:req.user}});
 
-      await EmployeeDetails.update(req.body,{where:{employeeId: req.params.empId}});
-      return res.status(201).json({
-        success: true,
-        message: "Details updated successfully"
-      })
+    if(dsUser){
+      // Checking if flag exists
+        if(req.body.flag){
+           await EmployeeDetails.update(req.body,{where:{employeeId: req.params.empId}});
+           await Flag.update({flag:req.body.flag}, {where:{employeeId:req.params.empId}});
+           return res.status(201).json({
+             success: true,
+             message: "Details updated successfully"
+           });
+        }
+  
+        await EmployeeDetails.update(req.body,{where:{employeeId: req.params.empId}});
+        return res.status(201).json({
+          success: true,
+          message: "Details updated successfully"
+        })
+
+    }else if(emp && emp.id == req.params.empId){
+      // Checking if flag exists
+      if(req.body.flag){
+        await EmployeeDetails.update(req.body,{where:{employeeId: req.params.empId}});
+        await Flag.update({flag:req.body.flag}, {where:{employeeId:req.params.empId}});
+        return res.status(201).json({
+          success: true,
+          message: "Details updated successfully"
+        });
+     }
+
+     await EmployeeDetails.update(req.body,{where:{employeeId: req.params.empId}});
+     return res.status(201).json({
+       success: true,
+       message: "Details updated successfully"
+     })
+    }else{
+      return res.status(401).json({success: false, message:"Login required"});
+    }
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -376,7 +402,10 @@ exports.employee_delete = async(req,res)=>{
 // Fetching Single Employee (Tested)
 exports.employee_get = async(req,res)=>{
   try {
+    
     let result = {};
+    const dsUser = await DSuser.findOne({where:{email:req.email}}); 
+    const emp = await Employee.findOne({where:{email:req.email}})
 // fetching employee 
     const employee = await Employee.findOne({where:{id:req.params.empId}, 
     attributes: ['id', 'pin'],
@@ -385,22 +414,41 @@ exports.employee_get = async(req,res)=>{
              {model:Flag, attributes:['flag']},
 
        ]});
-      //  console.log(employee.employeeDetail)
-// Rearranging
-       result['user_id'] = employee.id;
-       result['flag'] = employee.flag.flag;
-       result['pin'] = employee.pin;
-       const emp = employee.toJSON();
-       const len = Object.keys(emp.employeeDetail).length;
-       for (let i = 0; i < len; i++) {
-         result[Object.keys(emp.employeeDetail)[i]] = Object.values(emp.employeeDetail)[i]
-         
-       }
+       if(dsUser){
 
-       return res.status(200).json({
-      success: true,
-      employee: result
-    })
+         result['user_id'] = employee.id;
+         result['flag'] = employee.flag.flag;
+         result['pin'] = employee.pin;
+         const emp = employee.toJSON();
+         const len = Object.keys(emp.employeeDetail).length;
+         for (let i = 0; i < len; i++) {
+           result[Object.keys(emp.employeeDetail)[i]] = Object.values(emp.employeeDetail)[i]
+           
+         }
+  
+         return res.status(200).json({
+        success: true,
+        employee: result
+      })
+       }else if(emp && emp.id === employee.id){
+        result['user_id'] = employee.id;
+         result['flag'] = employee.flag.flag;
+         result['pin'] = employee.pin;
+         const emp = employee.toJSON();
+         const len = Object.keys(emp.employeeDetail).length;
+         for (let i = 0; i < len; i++) {
+           result[Object.keys(emp.employeeDetail)[i]] = Object.values(emp.employeeDetail)[i]
+           
+         }
+  
+         return res.status(200).json({
+        success: true,
+        employee: result
+      })
+       }else{
+        return res.status(401).json({success: false, message:"Login required"});
+       }
+// Rearranging
   } catch (error) {
     console.log(error);
     return res.status(500).json({success: false, message: "Server Error"});
@@ -411,12 +459,23 @@ exports.employee_get = async(req,res)=>{
 // Activating Employee (Tested)
 exports.activateEmployee_patch = async (req, res)=>{
   try {
+    var invitedByName="";
+    // fetching SentBy user
+    if(req.userType === "DSuser"){
+      const sentBy = await DSuser.findOne({where:{email: req.user}});
+      console.log(sentBy)
+      invitedByName = `${sentBy.firstName} ${sentBy.lastName}` 
+    }else{
+      const sentBy = await Employee.findOne({where:{email:req.user}, include:[{model:EmployeeDetails}]});
+      invitedByName = `${sentBy.employeeDetail.fName} ${sentBy.employeeDetail.lName}` 
+    }
+    console.log(invitedByName);
     // Fetching flag & employee
     const check = await Flag.findOne({where:{employeeId: req.params.empId}, include:[{model: Employee}]});
-
+    // console.log("YE EMAIL HAI",check.employee.email)
     if(check && check.flag === 'Onboarding' || check.flag === 'Active'){
       // Fetching Mail Content
-      const content = ou.activationOutput(check.employee.pin, check.employee.email);
+      const content = ou.activationOutput(check.employee.pin.toString(), check.employee.email, invitedByName, req.user);
 
       // If mail not sent then it will not activate
       transporter.sendMail(content, async function (err, info) {

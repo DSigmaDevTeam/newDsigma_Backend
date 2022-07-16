@@ -13,6 +13,7 @@ module.exports = async(req, res, next) => {
     jwt.verify(token, JWT_SECRET, async(err, payload) => {
         try {
             if (err) {
+                console.log(err)
                 return res.status(401).json({ message: "You must be logged in" });
             }
             const { user } = payload;
