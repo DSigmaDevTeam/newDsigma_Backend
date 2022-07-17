@@ -8,12 +8,24 @@ const pinGenerator = require('../utils/pinGenerator')
 const {transporter} = require("../utils/transporter");
 const Branch = require('../models/company/branch/branch');
 const Role = require('../models/company/rolesAndPermissions/role');
+const DSuser = require('../models/dsigma/dsigmaUser');
 
 
 exports.email_post = async(req, res)=>{
   try {
+    let name = ""
+    if(req.userType === "DSuser"){
+        const dsUser = await DSuser.findOne({where:{email:req.user}});
+        name = `${dsUser.firstName} ${dsUser.lastName}`
+        console.log("DATA",dsUser);
+        console.log("NOT SO FINAL VALUE",name)
+    }else{
+        const emp = await Employee.findOne({where:{email:req.user}, include:[{model:EmployeeDetails}]});
+        name = `${emp.employeeDetail.fname} ${emp.employeeDetail.lname}`
+    }
+    console.log("FINAL VALUE",name)
     let mailOptions = {
-      from: 'dsigmatesting@gmail.com',
+      from: name,
       to: req.body.email,
       subject: `DSigma: New Employee Invitation for ${req.body.email.toLowerCase()}`,
       html: `<!DOCTYPE html>
@@ -40,7 +52,7 @@ exports.email_post = async(req, res)=>{
                   <th style="font-size:20px; padding: 10px;">Hi ${req.body.email.toLowerCase()}</th>
               </tr>
               <tr style="text-align: center;">
-                  <td style="text-align:center;">You have been invited by <strong>Hardik Pokiya</strong> to join DSigma</td>
+                  <td style="text-align:center;">You have been invited by <strong>${name}</strong> to join DSigma</td>
               </tr>
       
               <tr style="text-align: center;">
@@ -93,19 +105,12 @@ exports.email_post = async(req, res)=>{
       
       </body>
       </html>`
-      // attachments: [
-      //   {
-      //     filename: `${name}.pdf`,
-      //     path: path.join(__dirname, `../../src/assets/books/${name}.pdf`),
-      //     contentType: 'application/pdf',
-      //   },
-      // ],
     };
     
     transporter.sendMail(mailOptions, function (err, info) {
       if (err) {
         console.log(err);
-        // return res.status(400).json({success: false, message: `User Created, But email not sent`});
+        return res.status(400).json({success: false, message: `Employee added successfully, Email not sent`});
       } 
         // return res.status(200).json({
         //   success: true,

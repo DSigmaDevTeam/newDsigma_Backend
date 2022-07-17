@@ -16,11 +16,6 @@ const AdminFlag = require('../models/dsigma/adminFlag');
 
 
 
-// const CLIENT_ID = process.env.CLIENT_ID;
-// const CLIENT_SECRET = process.env.CLIENT_SECRET;
-// const REDIRECT_URI = process.env.REDIRECT_URI;
-// const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
-// const SENDER_EMAIL = process.env.SENDER_EMAIL;
 
 // S3 Instance
 const s3 = new aws.S3({
@@ -61,7 +56,7 @@ fileFilter: function( req, file, cb ){
 }
 }).array( 'galleryImage', 3 );
 
-//Employee Details Form (TESTED) (Only mail Not working)
+//Employee Details Form (NOT TESTED) (Only mail Not working)
 exports.form_post = async(req,res)=>{   
 
   try {
@@ -84,9 +79,71 @@ exports.form_post = async(req,res)=>{
           // If File not found
           if( req.files === undefined ){
             console.log( 'Error: No File Selected!' );
+                        // If Success
+                        let fileArray = req.files,
+                        fileLocation;
+                      var galleryImgLocationArray = [];
+                      for ( let i = 0; i < fileArray.length; i++ ) {
+                        fileLocation = fileArray[ i ].location;
+                        galleryImgLocationArray.push( fileLocation )
+                      }
+          
+                // Inserting EMP details
+                      await EmployeeDetails.update({
+                        userId: user.id,
+                // Info
+                        title: req.body.title,
+                        fname: req.body.fname,
+                        lname: req.body.lname,
+                        workEmail: req.body.workEmail,
+                        personalEmail: user.email,
+                        mobNumber: req.body.mobNumber,
+                // Personal Info
+                        DOB: req.body.DOB,
+                        maritalStatus: req.body.maritalStatus,
+                        gender: req.body.gender,
+                        medicareNumber: req.body.medicareNumber,
+                        driversLicense: req.body.driversLicense,
+                        passportNumber: req.body.passportNumber,
+                        address: req.body.address,
+                        address2: req.body.address2,
+                        city: req.body.city,
+                        state: req.body.state,
+                        postCode: req.body.postCode,
+                        Country: req.body.country,
+                // Bank Details
+                        bankName:req.body.bankName,
+                        BSB: req.body.BSB,
+                        accountNumber: req.body.accountNumber,
+                // TAX INFO
+                        taxFileNumber: req.body.taxFileNumber,
+                // Working Rights
+                        workingRights: req.body.workingRights,
+                // Primary Contact
+                        firstName: req.body.firstName,
+                        lastName: req.body.lastName,
+                        email: req.body.email,
+                        mobile: req.body.mobile,
+                        workPhone: req.body.workPhone,
+                        contactType: req.body.contactType,
+                // Secondary Contact
+                        sfname: req.body.sfname,
+                        slname: req.body.slname,
+                        semail: req.body.semail,
+                        smobNo: req.body.smobNo,
+                        sworkNo: req.body.sworkNo,
+                        scontactType: req.body.scontactType,
+                        linkedIn: req.body.linkedIn,
+                // Files
+                        file1: "N/A",
+                        file2: "N/A",
+                        file3: "N/A",
+                      },{where:{userId: user.id}});
+                
+                // Updating Flag
+                      await Flag.update({flag: 'Onboarding'}, {where:{user_id: user.id}});
           } else {
             // If Success
-     
             let fileArray = req.files,
               fileLocation;
             var galleryImgLocationArray = [];
@@ -154,84 +211,7 @@ exports.form_post = async(req,res)=>{
           }
         }
       });
-      // var file1 = null;
-      // var file2 = null;
-      // var file3 = null;
-      // console.log("fileee Location",req.files[1])
-      // if(req.files.length === 3){
-      //   file1 = req.files[0].location;
-      //   file2 = req.files[1].location;
-      //   file3 = req.files[2].location;
-      // }else if(req.files.length === 2){
-      //   file1 = req.files[0].location;
-      //   file2 = req.files[1].location;
-      // }else if(req.files.length === 1){
-      //   file1 = req.files[0].location;
-      // }
-
-// Inserting EMP details
-        // console.log(galleryImgLocationArray[1]);
-        // console.log("User Id is ", user.id)
-        // console.log("file Location", file1)
-//        await EmployeeDetails.update({
-//         userId: user.id,
-// // Info
-//         title: req.body.title,
-//         fname: req.body.fname,
-//         lname: req.body.lname,
-//         workEmail: req.body.workEmail,
-//         personalEmail: user.email,
-//         mobNumber: req.body.mobNumber,
-// // Personal Info
-//         DOB: req.body.DOB,
-//         maritalStatus: req.body.maritalStatus,
-//         gender: req.body.gender,
-//         medicareNumber: req.body.medicareNumber,
-//         driversLicense: req.body.driversLicense,
-//         passportNumber: req.body.passportNumber,
-//         address: req.body.address,
-//         address2: req.body.address2,
-//         city: req.body.city,
-//         state: req.body.state,
-//         postCode: req.body.postCode,
-//         Country: req.body.country,
-// // Bank Details
-//         bankName:req.body.bankName,
-//         BSB: req.body.BSB,
-//         accountNumber: req.body.accountNumber,
-// // TAX INFO
-//         taxFileNumber: req.body.taxFileNumber,
-// // Working Rights
-//         workingRights: req.body.workingRights,
-// // Primary Contact
-//         firstName: req.body.firstName,
-//         lastName: req.body.lastName,
-//         email: req.body.email,
-//         mobile: req.body.mobile,
-//         workPhone: req.body.workPhone,
-//         contactType: req.body.contactType,
-// // Secondary Contact
-//         sfname: req.body.sfname,
-//         slname: req.body.slname,
-//         semail: req.body.semail,
-//         smobNo: req.body.smobNo,
-//         sworkNo: req.body.sworkNo,
-//         scontactType: req.body.scontactType,
-//         linkedIn: req.body.linkedIn,
-// // Files
-//         file1: file1,
-//         file2: file2,
-//         file3: file3,
-//       },{where:{userId: user.id}});
-
-      // const emp = await Employee.update(req.body, {where:{userId: user.id}});  
-
-
-// Updating Flag
-      // await Flag.update({flag: 'Onboarding'}, {where:{user_id: user.id}});
-
-// Email Data
-      // console.log(req.body)
+     
       const output = ou.onboardingOutput(req.body)
 
                         try {
@@ -415,39 +395,44 @@ exports.employee_get = async(req,res)=>{
              {model:Flag, attributes:['flag']},
 
        ]});
-       if(dsUser){
+       if(employee){
 
-         result['user_id'] = employee.id;
-         result['flag'] = employee.flag.flag;
-         result['pin'] = employee.pin;
-         const emp = employee.toJSON();
-         const len = Object.keys(emp.employeeDetail).length;
-         for (let i = 0; i < len; i++) {
-           result[Object.keys(emp.employeeDetail)[i]] = Object.values(emp.employeeDetail)[i]
-           
-         }
+         if(dsUser){
   
-         return res.status(200).json({
-        success: true,
-        employee: result
-      })
-       }else if(emp && emp.id === employee.id){
-        result['user_id'] = employee.id;
-         result['flag'] = employee.flag.flag;
-         result['pin'] = employee.pin;
-         const emp = employee.toJSON();
-         const len = Object.keys(emp.employeeDetail).length;
-         for (let i = 0; i < len; i++) {
-           result[Object.keys(emp.employeeDetail)[i]] = Object.values(emp.employeeDetail)[i]
-           
+           result['user_id'] = employee.id;
+           result['flag'] = employee.flag.flag;
+           result['pin'] = employee.pin;
+           const emp = employee.toJSON();
+           const len = Object.keys(emp.employeeDetail).length;
+           for (let i = 0; i < len; i++) {
+             result[Object.keys(emp.employeeDetail)[i]] = Object.values(emp.employeeDetail)[i]
+             
+           }
+    
+           return res.status(200).json({
+          success: true,
+          employee: result
+        })
+         }else if(emp && emp.id === employee.id){
+          result['user_id'] = employee.id;
+           result['flag'] = employee.flag.flag;
+           result['pin'] = employee.pin;
+           const emp = employee.toJSON();
+           const len = Object.keys(emp.employeeDetail).length;
+           for (let i = 0; i < len; i++) {
+             result[Object.keys(emp.employeeDetail)[i]] = Object.values(emp.employeeDetail)[i]
+             
+           }
+    
+           return res.status(200).json({
+          success: true,
+          employee: result
+        })
+         }else{
+          return res.status(401).json({success: false, message:"Login required"});
          }
-  
-         return res.status(200).json({
-        success: true,
-        employee: result
-      })
        }else{
-        return res.status(401).json({success: false, message:"Login required"});
+        return res.status(404).json({success:false, message:"Bad Method Call"})
        }
 // Rearranging
   } catch (error) {

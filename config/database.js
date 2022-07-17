@@ -2,7 +2,7 @@ const Sequelize = require('sequelize');
 require('dotenv').config();
 
 // DB Connection  
-// module.exports = new Sequelize('newDsigma', 
+// module.exports = new Sequelize('merger Test', 
 //     'postgres',
 //     'password', {
 //     host: 'localhost',
