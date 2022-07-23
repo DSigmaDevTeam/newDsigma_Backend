@@ -103,14 +103,32 @@ exports.register_post = async (req, res) => {
 // Fetching all branches
 exports.branches_get = async (req, res) => {
     try {
-        DSuser.findOne({ where: { email: req.user }, include: [{ model: Company }] }).then((DSuser) => {
-            Company.findOne({ where: { id: DSuser.company.id } })
-                .then(async (company) => {
-                    const branches = await Branch.findAll({ where: { companyId: company.id } });
-                    return res.status(200).json({ success: true, branches: branches });
-                });
+        if(req.userType === "DSuser"){
+            DSuser.findOne({ where: { email: req.user }, include: [{ model: Company }] }).then((DSuser) => {
+                Company.findOne({ where: { id: DSuser.company.id } })
+                    .then(async (company) => {
+                        const branches = await Branch.findAll({ where: { companyId: company.id } });
+                        return res.status(200).json({ success: true, branches: branches });
+                    });
+    
+            });
 
-        });
+        }else if(req.userType === "Employee"){
+            Employee.findOne({ where: { email: req.user }}).then((employee) => {
+                Branch.findOne({where:{id:employee.branchId}})
+                .then((branch)=>{
+                    Company.findOne({ where: { id: branch.companyId } })
+                    .then(async (company) => {
+                        const branches = await Branch.findAll({ where: { companyId: company.id } });
+                        return res.status(200).json({ success: true, branches: branches });
+                    });
+                })
+                
+    
+            });
+        }else{
+
+        }
     } catch (error) {
         console.log(error);
         return res.status(500).json({ success: false, message: "Something went wrong, Please try again later" })
@@ -205,5 +223,114 @@ exports.branch_get = async(req, res)=>{
     } catch (error) {
         console.log(error);
         return res.status(500).json({success:false, message:"something went wrong, Please try again later"});
+    }
+}
+
+// Updating Details while switching branch
+exports.fetchUserDetails_get = async(req,res)=>{
+    try {
+        console.log("Kakashi")
+        if(req.userType === "Employee"){
+            const employee = await Employee.findOne({
+                where:{
+                    email:req.user
+                },
+                include:[
+                    {model:Flag},
+                ]});
+            const branch = await Branch.findOne({where:{id:employee.branchId}});
+            const company = await Company.findOne({where:{id: branch.companyId}});
+            const key = process.env.ACCESS_TOKEN_SECRET;
+                        const accessToken = jwt.sign({user:employee.email}, key,{
+                            expiresIn: '30d'
+                        });  
+            return res.status(200).json({
+                success: true,
+                user: employee.email,
+                flag: employee.flag.flag,
+                JWT_TOKEN: accessToken,
+                currentBranchId: employee.currentBranchId,
+                isAdmin: employee.isAdmin,
+                branchId: employee.branchId,
+                employeeId: employee.id,
+                branchName: branch.name,
+                branchLogo: branch.logo,
+                companyName: company.name
+            });
+            
+        }else if(req.userType === "DSuser"){
+            const dsUser = await DSuser.findOne({
+                where:{email:req.user},
+                include:[{
+                    model:Company, include:[{model:Branch}]
+                }, {model:AdminFlag}]
+            });
+            const branchName = await Branch.findOne({where:{id:dsUser.currentBranchId}});
+            const key = process.env.ACCESS_TOKEN_SECRET;
+            const accessToken = jwt.sign({user:dsUser.email}, key,{
+                expiresIn: '30d'
+            });
+            return res.status(200).json({success: true,
+                user:dsUser.email, 
+                isAdmin: dsUser.isAdmin,
+                companyRegistered: dsUser.companyRegistered,
+                currentBranchId: dsUser.currentBranchId,
+                flag: dsUser.adminFlag.flag,
+                JWT_TOKEN: accessToken,
+                companyName: dsUser.company.name,
+                companyId: dsUser.company.id,
+                branchName: branchName? branchName.name :null,
+                branchLogo: branchName? branchName.logo : null 
+            });
+        }
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({success: false, message:"Something went wrong, Please try again later"});      
+    }
+} 
+
+exports.editBranch_patch = async(req,res)=>{
+    try {
+        
+        const branch = await Branch.findOne({where:{id: req.params.branchId}});
+        const company = await Company.findOne({where:{id:branch.companyId}});
+        if(req.userType == "DSuser"){
+            const dsUser = await DSuser.findOne({where:{email:req.user}});
+            
+            // editing user has to be the owner of the associated company
+            if(company.dsigmaUserId == dsUser.id ){
+                
+                // cannot edit branch code and id
+                if(req.body.id || req.body.code || req.body.kioskId){
+                    return res.status(400).json({success: false, message:"Bad Method Call"});
+                }else{
+                    await Branch.update(req.body,{where:{id:req.params.branchId}});
+                    return res.status(200).json({success: true, message:"Branch details updated successfully"});
+                }
+            }else{
+                return res.status(400).json({success:false, message:"Unauthorized user"});
+            }
+        }else if(req.userType == "Employee"){
+            const employee = await Employee.findOne({where:{email:req.user}});
+            const employeeBranch = Branch.findOne({where:{id:employee.branchId}});
+            // editing user has to be the owner of the associated company
+            if(employeeBranch.companyId === branch.companyId ){
+                
+                // cannot edit branch code and id, kioskId
+                if(req.body.id || req.body.code || req.body.kioskId){
+                    return res.status(400).json({success: false, message:"Bad Method Call"});
+                }else{
+                    await Branch.update(req.body,{where:{id:req.params.id}});
+                    return res.status(200).json({success: true, message:"Branch details updated successfully"});
+                }
+            }else{
+                return res.status(400).json({success:false, message:"Unauthorized user"});
+            }
+        }else{
+            return res.json({m:"Jajasgu"})
+        }
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({success:false, message:"Something went wrong, Please try again later"})
     }
 }

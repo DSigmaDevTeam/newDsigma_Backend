@@ -72,67 +72,73 @@ exports.DsUser_login_post = async(req, res)=>{
 // Employee Login
 exports.emp_login_post = async(req,res)=>{
     try {
-        // fetching employee
-        const employee = await Employee.findOne({
-            where:{
-                email: req.body.email
-            },
-            include:[{
-                model: Flag,
-                attributes: ['flag']
-            },
-            {
-                model: EmployeeRole,
+        // check if the email and password is being passed
+        if(!req.email || !req.password){
 
-            }
-        ]
-        });
+            // fetching employee
+            const employee = await Employee.findOne({
+                where:{
+                    email: req.body.email
+                },
+                include:[{
+                    model: Flag,
+                    attributes: ['flag']
+                },
+                {
+                    model: EmployeeRole,
+    
+                }
+            ]
+            });
+            
+            
+            // Checking if the employee fetched has password
+            if(employee && employee.password){
+                // Fetching associated branch
+                const branch = await Branch.findOne({where:{
+                    id: employee.currentBranchId
+                }});
         
-        // Fetching associated branch
-        const branch = await Branch.findOne({where:{
-            id: employee.currentBranchId
-        }});
-
-        // Fetching associated Company
-        const company = await Company.findOne({where:{
-            id: branch.companyId
-        }})
-
-        // Checking if the employee fetched has password
-        if(employee && employee.password){
-            // If Employee & pass exists verifying pass
-            if(employee.password && await bcrypt.compare(req.body.password, employee.password)){
-                const key = process.env.ACCESS_TOKEN_SECRET;
-                        const accessToken = jwt.sign({user:employee.email}, key,{
-                            expiresIn: '30d'
-                        });
-                        return res.status(200).json({
-                            success: true,
-                            user: employee.email,
-                            flag: employee.flag.flag,
-                            JWT_TOKEN: accessToken,
-                            currentBranchId: employee.currentBranchId,
-                            isAdmin: employee.isAdmin,
-                            branchId: employee.branchId,
-                            employeeId: employee.id,
-                            branchName: branch.name,
-                            branchLogo: branch.logo,
-                            companyName: company.name
-                        });
+                // Fetching associated Company
+                const company = await Company.findOne({where:{
+                    id: branch.companyId
+                }})
+                // If Employee & pass exists verifying pass
+                if(employee.password && await bcrypt.compare(req.body.password, employee.password)){
+                    const key = process.env.ACCESS_TOKEN_SECRET;
+                            const accessToken = jwt.sign({user:employee.email}, key,{
+                                expiresIn: '30d'
+                            });
+                            return res.status(200).json({
+                                success: true,
+                                user: employee.email,
+                                flag: employee.flag.flag,
+                                JWT_TOKEN: accessToken,
+                                currentBranchId: employee.currentBranchId,
+                                isAdmin: employee.isAdmin,
+                                branchId: employee.branchId,
+                                employeeId: employee.id,
+                                branchName: branch.name,
+                                branchLogo: branch.logo,
+                                companyName: company.name
+                            });
+                }else{
+                    // Returning error 
+                    res.status(401).json({
+                        success: false,
+                        message: "Incorrect Credentials"
+                    });
+                }
+    
             }else{
-                // Returning error 
-                res.status(401).json({
+                // Returning error If password or email not found
+                return res.status(404).json({
                     success: false,
-                    message: "Incorrect Credentials"
+                    message: "Unregistered User"
                 });
             }
-
         }else{
-            // Returning error If password or email not found
-            return res.status(404).json({
-                success: false,
-                message: "Unregistered User"
-            });
+            return res.status(400).json({success: false, message:"Please don't leave the fields empty"});
         }
     } catch (error) {
         console.log(error);
