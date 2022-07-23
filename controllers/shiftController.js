@@ -240,6 +240,9 @@ exports.shiftDelete_delete = async(req,res)=>{
     try {
         // Fetching shift
         const shift = await Shift.findOne({where:{id: req.params.shiftId}});
+        if(shift.status === "Active"){
+            return res.status(400).json({success: false, message:"Please wait for the shift to end"});
+        }
         // Checking if the shift exists
         if (shift) {
             // checking if the shift is active
