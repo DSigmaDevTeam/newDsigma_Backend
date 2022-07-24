@@ -128,7 +128,7 @@ exports.shiftEdit_patch = async(req,res)=>{
                             await Shift.update({status:"Completed"}, {where:{id:shift.id}});
             
                         })
-                        return res.status(200).json({success:true, message:"details has been updated"});
+                        return res.status(200).json({success:true, message:"Shift updated successfully"});
         
                     } else{
                         
@@ -141,7 +141,7 @@ exports.shiftEdit_patch = async(req,res)=>{
                             });
             
                         })
-                        return res.status(200).json({success:true, message:"details has been updated"});
+                        return res.status(200).json({success:true, message:"Shift updated successfully"});
                     }
                 }else if(req.userType === "DSuser"){
                     const updatedByAdmin = await DSuser.findOne({where:{email: req.user}});
@@ -159,7 +159,7 @@ exports.shiftEdit_patch = async(req,res)=>{
                                             await Shift.update({status:"Completed"}, {where:{id:shift.id}});
                             
                                         })
-                                        return res.status(200).json({success:true, message:"details has been updated"});
+                                        return res.status(200).json({success:true, message:"Shift updated successfully"});
                         
                                     } else{
                                         
@@ -172,7 +172,7 @@ exports.shiftEdit_patch = async(req,res)=>{
                                             });
                             
                                         })
-                                        return res.status(200).json({success:true, message:"details has been updated"});
+                                        return res.status(200).json({success:true, message:"Shift updated successfully"});
                                     }
                 }
 

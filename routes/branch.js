@@ -58,7 +58,7 @@ router.post('/:companyId/registerbranch',isAdmin,upload.fields([
 router.get('/branches', isAdmin, branchController.branches_get);
 router.get('/branch', isAdmin, branchController.branch_get);
 router.get('/branch/switch/:branchId', isAdmin, branchController.switchBranch_get);
-router.get('/branch/updatedUser', isAdmin, branchController.fetchUserDetails_get);
+router.get('/branch/updateduser', isAdmin, branchController.fetchUserDetails_get);
 router.patch('/branch/edit/:branchId', isAdmin, branchController.editBranch_patch);
 
 module.exports = router;
